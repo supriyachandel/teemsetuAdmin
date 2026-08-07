@@ -5,8 +5,8 @@ WORKDIR /app
 # Copy workspace root files
 COPY package.json package-lock.json ./
 
-# Stub out apps/web so npm workspace resolution doesn't fail
-RUN mkdir -p apps/web && echo '{"name":"@crm/web","version":"0.0.0","private":true}' > apps/web/package.json
+# Copy apps/web/package.json so npm ci succeeds without missing dependencies
+COPY apps/web/package.json ./apps/web/
 
 COPY packages/shared ./packages/shared
 COPY apps/api ./apps/api
