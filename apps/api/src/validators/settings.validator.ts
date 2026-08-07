@@ -9,4 +9,5 @@ export const updateCompanySettingsSchema = z.object({
   theme: z.enum(['light', 'dark', 'system']).optional(),
   payrollSettings: z.record(z.any()).optional(),
   employeeCodePrefix: z.string().min(1).max(10).optional(),
+  linkedinToken: z.string().optional().nullable(),
 });

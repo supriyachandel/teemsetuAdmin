@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import * as Popover from '@radix-ui/react-popover';
-import { format } from 'date-fns';
+import { format, addDays, startOfWeek } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import { CalendarDays, Check, X } from 'lucide-react';
@@ -12,6 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TeamSchedule, EmployeeSchedule } from '@/components/attendance/TeamSchedule';
 import { api, getApiErrorMessage } from '@/lib/api';
 import { useAppSelector } from '@/store/hooks';
 import { PERMISSIONS } from '@crm/shared';
@@ -45,6 +47,11 @@ interface LeaveRequest {
     user: { firstName: string; lastName: string };
   };
 }
+
+const getStartOfWeek = () => {
+  const now = new Date();
+  return startOfWeek(now, { weekStartsOn: 1 });
+};
 
 export function LeavesPage() {
   const user = useAppSelector((s) => s.auth.user);
@@ -105,6 +112,51 @@ export function LeavesPage() {
       setLoading(false);
     }
   };
+
+  const teamSchedules = useMemo(() => {
+    const map = new Map<string, EmployeeSchedule>();
+
+    requests.forEach(r => {
+      if (r.status !== 'APPROVED') return; // Only show approved leaves
+
+      const empId = r.employee?.employeeCode || 'self';
+      const empName = r.employee ? `${r.employee.user.firstName} ${r.employee.user.lastName}` : 'My Leaves';
+
+      if (!map.has(empId)) {
+        map.set(empId, { id: empId, name: empName, events: [] });
+      }
+      
+      let type: any = 'paid_leave'; // Default to paid_leave
+      const typeName = r.leaveType.name.toLowerCase();
+      if (typeName.includes('sick') || typeName.includes('unpaid') || typeName.includes('without pay')) {
+        type = 'no_attendance';
+      }
+
+      map.get(empId)!.events.push({
+        id: r.id,
+        startDate: new Date(r.startDate),
+        endDate: new Date(r.endDate),
+        type,
+      });
+    });
+
+    const schedules = Array.from(map.values());
+
+    if (holidays.length > 0) {
+      schedules.unshift({
+        id: 'holidays',
+        name: 'Company Holidays',
+        events: holidays.map(h => ({
+          id: h.id,
+          startDate: new Date(h.date),
+          endDate: new Date(h.date),
+          type: 'holiday'
+        }))
+      });
+    }
+
+    return schedules;
+  }, [requests, holidays]);
 
   useEffect(() => {
     load();
@@ -376,37 +428,50 @@ export function LeavesPage() {
       </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+        <Card className="md:col-span-2 lg:col-span-1">
           <CardHeader>
             <CardTitle className="text-base">Leave Calendar</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col items-center p-4 overflow-x-auto">
-            <style>{`
-              .rdp { --rdp-cell-size: 32px; margin: 0; }
-              .rdp-day_selected { font-weight: bold; }
-              .rdp-months { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; justify-content: center; }
-            `}</style>
-            <DayPicker 
-              mode="multiple" 
-              modifiers={modifiers} 
-              modifiersStyles={modifiersStyles}
-              numberOfMonths={1}
-              onDayClick={handleDayClick}
-            />
-            {selectedDayInfo && (
-              <div className="mt-4 p-3 bg-muted/50 rounded-md border text-sm w-full max-w-sm">
-                <p className="font-semibold mb-2">{format(selectedDayInfo.date, 'PPPP')}</p>
-                <ul className="space-y-1">
-                  {selectedDayInfo.text.map((t, idx) => (
-                    <li key={idx} className="text-muted-foreground">{t}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+          <CardContent className="flex flex-col p-4 overflow-x-auto min-h-[400px]">
+            <Tabs defaultValue="my-calendar" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="my-calendar">My Calendar</TabsTrigger>
+                <TabsTrigger value="team-schedule">Team Schedule</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="my-calendar" className="flex flex-col items-center">
+                <style>{`
+                  .rdp { --rdp-cell-size: 32px; margin: 0; }
+                  .rdp-day_selected { font-weight: bold; }
+                  .rdp-months { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; justify-content: center; }
+                `}</style>
+                <DayPicker 
+                  mode="multiple" 
+                  modifiers={modifiers} 
+                  modifiersStyles={modifiersStyles}
+                  numberOfMonths={1}
+                  onDayClick={handleDayClick}
+                />
+                {selectedDayInfo && (
+                  <div className="mt-4 p-3 bg-muted/50 rounded-md border text-sm w-full max-w-sm">
+                    <p className="font-semibold mb-2">{format(selectedDayInfo.date, 'PPPP')}</p>
+                    <ul className="space-y-1">
+                      {selectedDayInfo.text.map((t, idx) => (
+                        <li key={idx} className="text-muted-foreground">{t}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="team-schedule">
+                <TeamSchedule startDate={getStartOfWeek()} schedules={teamSchedules} />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="md:col-span-2 lg:col-span-1">
           <CardHeader>
             <CardTitle className="text-base">
               {canApprove ? 'All Leave Requests' : 'My Leave Requests'}

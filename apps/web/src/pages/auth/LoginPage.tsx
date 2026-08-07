@@ -1,13 +1,22 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Zap, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Mail, Lock, Users, UserCircle, Banknote, CalendarCheck, FolderKanban, ListTodo, Plane, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { login, clearError } from '@/store/slices/authSlice';
 import { toast } from 'sonner';
+
+const GoogleIcon = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+  </svg>
+);
 
 
 
@@ -31,83 +40,98 @@ export function LoginPage() {
     }
   };
 
-
-
-
   return (
     <div className="min-h-screen flex bg-background selection:bg-primary/20 selection:text-primary">
-      <div className="relative hidden lg:flex lg:w-1/2 overflow-hidden flex-col justify-between text-white p-12">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/80 to-purple-900 z-0" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay z-0" />
-        <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-white/10 blur-[100px] z-0" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-violet-500/20 blur-[80px] z-0" />
-
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md shadow-inner border border-white/20">
-            <Zap className="h-6 w-6 text-white" />
-          </div>
-          <span className="text-2xl font-bold tracking-tight">Nexus CRM</span>
+      <div className="relative hidden lg:flex lg:w-[55%] overflow-hidden flex-col p-12 bg-slate-50 dark:bg-background">
+        <div className="relative z-10 mb-12 flex items-center gap-2">
+          <img src="/logo.png" alt="Team Setu" className="h-8 w-auto object-contain" />
+          <span className="text-xl font-bold text-slate-800 dark:text-foreground tracking-tight">TeamSetu</span>
         </div>
 
-        <div className="relative z-10">
-          <h1 className="text-5xl font-bold leading-tight tracking-tight mb-6">
-            Enterprise CRM <br /> HRMS + Projects
+        <div className="relative z-10 mb-8 max-w-2xl">
+          <h1 className="text-5xl lg:text-[3rem] font-bold leading-[1.1] tracking-tight text-slate-900 dark:text-white mb-5">
+            Run Your Entire Business <br />
+            from <span className="text-sidebar">One Connected <br /> Platform</span>
           </h1>
-          <p className="text-lg text-white/80 max-w-md font-medium leading-relaxed">
-            Unified platform for workforce management, payroll, and project delivery —
-            inspired by modern design principles.
+          <p className="text-base lg:text-lg text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-[500px]">
+            Team Setu brings together CRM, HRMS, Projects, Payroll, 
+            Attendance and more to streamline operations, empower teams 
+            and grow your business.
           </p>
         </div>
-        <p className="relative z-10 text-sm text-white/60 font-medium">© 2026 Nexus CRM. All rights reserved.</p>
+        
+        <div className="relative z-10 grid grid-cols-4 gap-3 lg:gap-4 max-w-[550px]">
+          {[
+            { name: 'CRM', icon: Users },
+            { name: 'HRMS', icon: UserCircle },
+            { name: 'Payroll', icon: Banknote },
+            { name: 'Attendance', icon: CalendarCheck },
+            { name: 'Projects', icon: FolderKanban },
+            { name: 'Tasks', icon: ListTodo },
+            { name: 'Leave Management', icon: Plane },
+            { name: 'Reports', icon: BarChart2 }
+          ].map((feature, i) => (
+            <div key={i} className="bg-white dark:bg-card rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm border border-slate-100 dark:border-border/40 hover:shadow-md hover:border-sidebar/20 transition-all group">
+              <div className="h-10 w-10 bg-sidebar/5 dark:bg-sidebar/20 rounded-full flex items-center justify-center mb-2.5 group-hover:bg-sidebar/10 transition-colors">
+                <feature.icon className="h-5 w-5 text-sidebar" strokeWidth={1.75} />
+              </div>
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 text-center leading-tight group-hover:text-sidebar transition-colors">{feature.name}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="flex flex-1 items-center justify-center p-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-background z-0" />
+      <div className="flex flex-1 items-center justify-center p-4 sm:p-6 relative overflow-hidden bg-gray-50 dark:bg-background">
         <div className="absolute top-[20%] right-[10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px] z-0 pointer-events-none" />
         <div className="absolute bottom-[10%] left-[10%] w-[50%] h-[50%] rounded-full bg-primary/5 blur-[100px] z-0 pointer-events-none" />
 
-        <Card className="w-full max-w-md border-border/40 shadow-2xl bg-background/60 backdrop-blur-xl relative z-10">
-          <CardHeader className="text-center pb-8 pt-6">
-            <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 lg:hidden ring-1 ring-primary/20">
-              <Zap className="h-7 w-7 text-primary" />
+        <Card className="w-full max-w-[440px] border-border/40 shadow-xl bg-white dark:bg-card relative z-10 p-1 sm:p-2 rounded-2xl max-h-[95vh] overflow-y-auto scrollbar-none">
+          <CardContent className="pt-6 px-6 sm:px-8 pb-6">
+            <div className="text-center mb-6">
+              <img src="/logo.png" alt="Team Setu Logo" className="h-14 w-auto mx-auto mb-4 object-contain" />
+              <h1 className="text-2xl font-bold tracking-tight text-foreground mb-1.5">Welcome back!</h1>
+              <p className="text-sm text-muted-foreground">Sign in to access your workspace</p>
             </div>
-            <CardTitle className="text-3xl tracking-tight font-bold">Welcome back</CardTitle>
-            <CardDescription className="text-base mt-2">Enter your credentials to access your workspace</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2.5">
-                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
-                  className="h-11 bg-muted/40 border-border/50 focus-visible:bg-background transition-colors"
-                  required
-                />
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-semibold text-foreground">Email address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    className="h-11 pl-11 bg-white dark:bg-background border-border/60 hover:border-border transition-colors rounded-xl"
+                    required
+                  />
+                </div>
               </div>
-              <div className="space-y-2.5">
+
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-                  <Link to="/forgot-password" className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">
+                  <Label htmlFor="password" className="text-sm font-semibold text-foreground">Password</Label>
+                  <Link to="/forgot-password" className="text-sm text-sidebar hover:text-sidebar/80 font-semibold transition-colors">
                     Forgot password?
                   </Link>
                 </div>
                 <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-11 bg-muted/40 border-border/50 focus-visible:bg-background transition-colors"
+                    placeholder="Enter your password"
+                    className="h-11 pl-11 pr-11 bg-white dark:bg-background border-border/60 hover:border-border transition-colors rounded-xl"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none transition-colors"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none transition-colors"
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -117,17 +141,40 @@ export function LoginPage() {
                   </button>
                 </div>
               </div>
+
+              <div className="flex items-center gap-2 mt-1">
+                <input type="checkbox" id="remember" className="rounded-sm border-border text-sidebar focus:ring-sidebar h-4 w-4 accent-sidebar cursor-pointer" />
+                <Label htmlFor="remember" className="text-sm font-medium text-foreground cursor-pointer">Remember me</Label>
+              </div>
+
               {error && <p className="text-sm text-destructive font-medium">{error}</p>}
-              <Button type="submit" className="w-full h-11 text-base font-medium shadow-md transition-all hover:shadow-lg active:scale-[0.98]" disabled={loading}>
+              
+              <Button type="submit" className="w-full h-11 text-base font-medium shadow-md transition-all hover:shadow-lg active:scale-[0.98] rounded-xl bg-gradient-to-r from-sidebar to-sidebar-accent hover:from-sidebar/90 hover:to-sidebar-accent/90 text-white mt-3" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign in
               </Button>
             </form>
 
-            <p className="mt-8 text-center text-sm text-muted-foreground">
-              New company?{' '}
-              <Link to="/register" className="text-primary font-medium hover:text-primary/80 transition-colors">
-                Create account
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border/40" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white dark:bg-card px-3 text-muted-foreground">or continue with</span>
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              <Button type="button" variant="outline" className="w-full h-11 bg-white dark:bg-background border-border/60 hover:bg-muted/30 rounded-xl font-medium justify-center gap-3 text-foreground">
+                <GoogleIcon />
+                Continue with Google
+              </Button>
+            </div>
+
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              New to Team Setu?{' '}
+              <Link to="/register" className="text-sidebar font-semibold hover:text-sidebar/80 transition-colors">
+                Create an account
               </Link>
             </p>
           </CardContent>

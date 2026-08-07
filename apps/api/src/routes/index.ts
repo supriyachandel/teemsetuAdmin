@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { platformRoutes } from './platform.routes';
+import jobRoutes from './job.routes';
 import authRoutes from './auth.routes';
 import dashboardRoutes from './dashboard.routes';
 import roleRoutes from './role.routes';
@@ -38,6 +40,8 @@ router.use('/chat', chatRoutes);
 router.use('/admin/users', adminUserRoutes);
 router.use('/audit-logs', auditRoutes);
 router.use('/company', companyRoutes);
+router.use('/platform', platformRoutes);
+router.use('/jobs', jobRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({ success: true, message: 'API is healthy', timestamp: new Date().toISOString() });

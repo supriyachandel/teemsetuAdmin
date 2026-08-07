@@ -15,6 +15,7 @@ import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { EmployeesPage } from '@/pages/employees/EmployeesPage';
+import { JobsPage } from '@/pages/jobs/JobsPage';
 import { BirthdaysPage } from '@/pages/employees/BirthdaysPage';
 import { AttendancePage } from '@/pages/attendance/AttendancePage';
 import { LeavesPage } from '@/pages/leaves/LeavesPage';
@@ -30,6 +31,7 @@ import { AdminUsersPage } from '@/pages/admin/AdminUsersPage';
 import { RolesPage } from '@/pages/admin/RolesPage';
 import { SubscriptionsPage } from '@/pages/subscriptions/SubscriptionsPage';
 import { CompanyBrandingPage } from '@/pages/company/CompanyBrandingPage';
+import { CompaniesPage } from '@/pages/platform/CompaniesPage';
 import { ROLES } from '@crm/shared';
 import { useSocket } from '@/hooks/useSocket';
 
@@ -72,6 +74,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.HR, ROLES.MANAGER]}>
               <EmployeesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="jobs"
+          element={
+            <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.HR]}>
+              <JobsPage />
             </ProtectedRoute>
           }
         />
@@ -136,6 +146,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.HR]}>
               <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="platform/companies"
+          element={
+            <ProtectedRoute roles={[ROLES.SYSTEM_ADMIN]}>
+              <CompaniesPage />
             </ProtectedRoute>
           }
         />

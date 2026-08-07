@@ -10,6 +10,7 @@ dotenv.config({ path: path.join(__dirname, '../../../.env') });
 const prisma = new PrismaClient();
 
 const ROLES = [
+  { name: 'SYSTEM_ADMIN', displayName: 'Platform Admin', description: 'Platform level access' },
   { name: 'SUPER_ADMIN', displayName: 'Super Admin', description: 'Full system access' },
 ];
 
@@ -142,6 +143,25 @@ async function main() {
     });
   }
 
+  const systemCompany = await prisma.company.upsert({
+    where: { slug: 'system-admin' },
+    update: {},
+    create: {
+      name: 'System Admin Platform',
+      slug: 'system-admin',
+      industry: 'Software',
+      settings: { create: {} },
+      subscription: {
+        create: {
+          plan: 'ENTERPRISE',
+          status: 'ACTIVE',
+          maxUsers: 9999,
+          maxProjects: 9999,
+        },
+      },
+    },
+  });
+
   for (const lt of defaultLeaveTypes) {
     await prisma.leaveType.upsert({
       where: { companyId_code: { companyId: company.id, code: lt.code } },
@@ -151,16 +171,26 @@ async function main() {
   }
 
   const superAdminRole = await prisma.role.findUnique({ where: { name: 'SUPER_ADMIN' } });
+  const systemAdminRole = await prisma.role.findUnique({ where: { name: 'SYSTEM_ADMIN' } });
 
   const passwordHash = await bcrypt.hash('Password@123', 12);
 
   const demoUsers = [
+    {
+      email: 'system@admin.com',
+      firstName: 'Platform',
+      lastName: 'Admin',
+      roleId: systemAdminRole!.id,
+      code: 'SYS-0001',
+      companyId: systemCompany.id,
+    },
     {
       email: 'thcoders@admin.com',
       firstName: 'Tanya',
       lastName: '',
       roleId: superAdminRole!.id,
       code: 'EMP-0001',
+      companyId: company.id,
     },
   ];
 
@@ -227,7 +257,7 @@ async function main() {
           passwordHash,
           firstName: u.firstName,
           lastName: u.lastName,
-          companyId: company.id,
+          companyId: u.companyId,
           roleId: u.roleId,
           status: 'ACTIVE',
           emailVerified: true,
@@ -238,7 +268,7 @@ async function main() {
       await prisma.employee.create({
         data: {
           userId: user.id,
-          companyId: company.id,
+          companyId: u.companyId,
           employeeCode: u.code,
           joiningDate: new Date('2024-01-15'),
           departmentId: deptByEmail[u.email],
@@ -252,6 +282,7 @@ async function main() {
           passwordHash,
           firstName: u.firstName,
           lastName: u.lastName,
+          companyId: u.companyId,
           roleId: u.roleId,
           status: 'ACTIVE',
           deletedAt: null,

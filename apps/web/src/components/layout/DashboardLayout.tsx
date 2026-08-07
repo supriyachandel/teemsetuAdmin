@@ -39,10 +39,10 @@ export function DashboardLayout() {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-64 bg-sidebar border-r p-4">
+          <aside className="absolute left-0 top-0 h-full w-64 bg-sidebar border-r border-sidebar-accent/30 p-4 text-sidebar-foreground">
             <div className="flex justify-between items-center mb-6">
               <span className="font-semibold truncate">{companyName}</span>
-              <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)}>
+              <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} className="text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground">
                 <X className="h-5 w-5" />
               </Button>
             </div>
@@ -54,12 +54,12 @@ export function DashboardLayout() {
                   onClick={() => setMobileOpen(false)}
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm',
-                      isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200',
+                      isActive ? 'bg-sidebar-accent text-sidebar-foreground shadow-sm' : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
                     )
                   }
                 >
-                  <item.icon className="h-4 w-4" />
+                  <item.icon className={cn("h-4 w-4 shrink-0 transition-transform duration-200", isActive ? "scale-110" : "group-hover:scale-110")} />
                   {item.title}
                 </NavLink>
               ))}

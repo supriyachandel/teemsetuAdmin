@@ -14,6 +14,7 @@ interface CompanySettings {
   lateThresholdMin: number;
   emailNotifications: boolean;
   theme: 'light' | 'dark' | 'system';
+  linkedinToken?: string;
 }
 
 export function SettingsPage() {
@@ -42,6 +43,7 @@ export function SettingsPage() {
           emailNotifications: res.data.data.emailNotifications ?? true,
           theme: res.data.data.theme ?? 'system',
           employeeCodePrefix: res.data.data.employeeCodePrefix ?? 'EMP',
+          linkedinToken: res.data.data.linkedinToken ?? '',
         });
       }
     } catch (e) {
@@ -185,6 +187,30 @@ export function SettingsPage() {
               {saving ? 'Saving...' : 'Save Settings'}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Integrations</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>LinkedIn API Token</Label>
+            <Input
+              type="password"
+              placeholder="Enter your LinkedIn OAuth Access Token"
+              value={form.linkedinToken || ''}
+              onChange={(e) => setForm({ ...form, linkedinToken: e.target.value })}
+              disabled={loading}
+            />
+            <p className="text-xs text-muted-foreground">
+              Required to automatically post jobs to LinkedIn. Obtain this from the LinkedIn Developer Portal.
+            </p>
+          </div>
+          <Button onClick={save} disabled={loading || saving}>
+            {saving ? 'Saving...' : 'Save Integrations'}
+          </Button>
         </CardContent>
       </Card>
     </div>

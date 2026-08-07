@@ -8,6 +8,7 @@ export const PERMISSIONS = {
   COMPANY_SETTINGS: 'company:settings',
   SUBSCRIPTION_MANAGE: 'subscription:manage',
   ANALYTICS_VIEW: 'analytics:view',
+  PLATFORM_MANAGE: 'platform:manage',
 
   // HR
   EMPLOYEES_READ: 'employees:read',
@@ -44,7 +45,8 @@ export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
 /** Default permissions per role */
 export const ROLE_PERMISSIONS: Record<string, PermissionKey[]> = {
-  SUPER_ADMIN: Object.values(PERMISSIONS),
+  SYSTEM_ADMIN: Object.values(PERMISSIONS),
+  SUPER_ADMIN: Object.values(PERMISSIONS).filter((p) => p !== PERMISSIONS.PLATFORM_MANAGE),
   HR: [
     PERMISSIONS.USERS_READ,
     PERMISSIONS.EMPLOYEES_READ,

@@ -17,6 +17,7 @@ export class SettingsService {
       theme?: 'light' | 'dark' | 'system';
       payrollSettings?: Record<string, unknown>;
       employeeCodePrefix?: string;
+      linkedinToken?: string;
     }
   ) {
     return settingsRepository.upsert(companyId, {
@@ -30,6 +31,7 @@ export class SettingsService {
       ...(input.theme !== undefined && { theme: input.theme }),
       ...(input.payrollSettings !== undefined && { payrollSettings: input.payrollSettings as Prisma.InputJsonValue }),
       ...(input.employeeCodePrefix !== undefined && { employeeCodePrefix: input.employeeCodePrefix }),
+      ...(input.linkedinToken !== undefined && { linkedinToken: input.linkedinToken }),
     });
   }
 }

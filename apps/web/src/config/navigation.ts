@@ -1,4 +1,5 @@
 import {
+  Briefcase,
   LayoutDashboard,
   Users,
   Clock,
@@ -36,6 +37,12 @@ export const mainNavigation: NavItem[] = [
     icon: Users,
     roles: [ROLES.SUPER_ADMIN, ROLES.HR, ROLES.MANAGER],
   },
+  {
+    title: 'Recruitment',
+    href: '/jobs',
+    icon: Briefcase,
+    roles: [ROLES.SUPER_ADMIN, ROLES.HR],
+  },
   { title: 'Attendance', href: '/attendance', icon: Clock },
   { title: 'Leaves', href: '/leaves', icon: CalendarDays },
   { title: 'Birthdays', href: '/birthdays', icon: Cake },
@@ -56,6 +63,15 @@ export const mainNavigation: NavItem[] = [
   },
   { title: 'Notifications', href: '/notifications', icon: Bell },
   { title: 'Chat', href: '/chat', icon: MessageSquare },
+];
+
+export const platformNavigation: NavItem[] = [
+  {
+    title: 'Companies',
+    href: '/platform/companies',
+    icon: Building2,
+    roles: [ROLES.SYSTEM_ADMIN],
+  },
 ];
 
 export const adminNavigation: NavItem[] = [
@@ -89,5 +105,13 @@ export const adminNavigation: NavItem[] = [
 export function getNavigationForRole(role: RoleName): NavItem[] {
   const filter = (items: NavItem[]) =>
     items.filter((item) => !item.roles || item.roles.includes(role));
+  
+  if (role === ROLES.SYSTEM_ADMIN) {
+    return [
+      ...filter(mainNavigation).filter(item => ['Dashboard', 'Notifications', 'Chat'].includes(item.title)),
+      ...filter(platformNavigation)
+    ];
+  }
+  
   return [...filter(mainNavigation), ...filter(adminNavigation)];
 }
