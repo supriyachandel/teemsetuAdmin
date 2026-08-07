@@ -53,6 +53,10 @@ interface DashboardStats {
   }>;
   employeeGrowth?: Array<{ month: string; count: number }>;
   revenue?: { total: number; growth: number };
+  totalCompanies?: number;
+  activeUsers?: number;
+  activeSubscriptions?: number;
+  estimatedRevenue?: number;
 }
 
 export function DashboardPage() {
@@ -74,15 +78,7 @@ export function DashboardPage() {
       .finally(() => setLoading(false));
   }, [isSystemAdmin]);
 
-  const growthData = stats?.employeeGrowth?.length
-    ? stats.employeeGrowth
-    : [
-        { month: 'Jan', count: 12 },
-        { month: 'Feb', count: 18 },
-        { month: 'Mar', count: 24 },
-        { month: 'Apr', count: 28 },
-        { month: 'May', count: 32 },
-      ];
+
 
   if (loading) {
     return (

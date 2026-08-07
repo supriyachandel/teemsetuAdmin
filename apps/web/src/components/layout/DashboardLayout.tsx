@@ -59,8 +59,12 @@ export function DashboardLayout() {
                     )
                   }
                 >
-                  <item.icon className={cn("h-4 w-4 shrink-0 transition-transform duration-200", isActive ? "scale-110" : "group-hover:scale-110")} />
-                  {item.title}
+                  {({ isActive }) => (
+                    <>
+                      <item.icon className={cn("h-4 w-4 shrink-0 transition-transform duration-200", isActive ? "scale-110" : "group-hover:scale-110")} />
+                      {item.title}
+                    </>
+                  )}
                 </NavLink>
               ))}
             </nav>

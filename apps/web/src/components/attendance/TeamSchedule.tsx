@@ -1,6 +1,6 @@
-import React from 'react';
+
 import { cn } from '@/lib/utils';
-import { format, addDays, isSameDay, startOfWeek } from 'date-fns';
+import { format, addDays, isSameDay } from 'date-fns';
 
 export type StatusType = 'work_from_home' | 'weekly_off' | 'paid_leave' | 'no_attendance' | 'holiday' | null;
 

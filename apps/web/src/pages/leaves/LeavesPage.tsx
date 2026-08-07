@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import * as Popover from '@radix-ui/react-popover';
-import { format, addDays, startOfWeek } from 'date-fns';
+import { format, startOfWeek } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import { CalendarDays, Check, X } from 'lucide-react';
