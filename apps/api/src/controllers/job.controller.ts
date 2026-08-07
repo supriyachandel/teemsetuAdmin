@@ -1,9 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
+import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { jobService } from '../services/job.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 
 export class JobController {
-  async getJobs(req: Request, res: Response, next: NextFunction) {
+  async getJobs(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       // Assuming req.user is populated by authenticate middleware
       const companyId = req.user!.companyId;
@@ -14,7 +15,7 @@ export class JobController {
     }
   }
 
-  async createJob(req: Request, res: Response, next: NextFunction) {
+  async createJob(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const companyId = req.user!.companyId;
       const job = await jobService.createJob(companyId, req.body);
