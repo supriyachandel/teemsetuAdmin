@@ -38,6 +38,12 @@ interface Designation {
   title: string;
 }
 
+interface Role {
+  id: string;
+  name: string;
+  displayName: string;
+}
+
 const emptyCreateForm = {
   email: '',
   firstName: '',
@@ -49,6 +55,7 @@ const emptyCreateForm = {
   phone: '',
   password: '',
   managerId: '',
+  roleId: '',
   baseSalary: '',
 };
 
@@ -60,6 +67,7 @@ export function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [designations, setDesignations] = useState<Designation[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -74,6 +82,7 @@ export function EmployeesPage() {
     departmentId: '',
     designationId: '',
     managerId: '',
+    roleId: '',
     phone: '',
     employmentStatus: 'ACTIVE',
   });
@@ -81,14 +90,16 @@ export function EmployeesPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [empRes, deptRes, desigRes] = await Promise.all([
+      const [empRes, deptRes, desigRes, rolesRes] = await Promise.all([
         api.get('/employees', { params: { search: search || undefined, limit: 50 } }),
         api.get('/employees/departments'),
         api.get('/employees/designations'),
+        api.get('/roles').catch(() => ({ data: { data: [] } })),
       ]);
       setEmployees(empRes.data.data ?? []);
       setDepartments(deptRes.data.data ?? []);
       setDesignations(desigRes.data.data ?? []);
+      setRoles(rolesRes.data.data ?? []);
     } catch (e) {
       toast.error(getApiErrorMessage(e));
     } finally {
@@ -121,6 +132,7 @@ export function EmployeesPage() {
         phone: form.phone || undefined,
         password: form.password || undefined,
         managerId: form.managerId || undefined,
+        roleId: form.roleId || undefined,
         baseSalary: form.baseSalary ? Number(form.baseSalary) : undefined,
       });
       const loginPassword = form.password || 'Password@123';
@@ -146,6 +158,7 @@ export function EmployeesPage() {
       departmentId: emp.department?.id ?? '',
       designationId: emp.designation?.id ?? '',
       managerId: emp.manager?.id ?? '',
+      roleId: (emp.user as any)?.role?.id ?? '',
       phone: emp.phone ?? '',
       employmentStatus: emp.employmentStatus,
     });
@@ -162,6 +175,7 @@ export function EmployeesPage() {
         departmentId: editForm.departmentId || null,
         designationId: editForm.designationId || null,
         managerId: editForm.managerId || null,
+        roleId: editForm.roleId || null,
         phone: editForm.phone || null,
         employmentStatus: editForm.employmentStatus,
       });
@@ -297,6 +311,21 @@ export function EmployeesPage() {
                 </select>
               </div>
               <div className="space-y-2">
+                <Label>System Role</Label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={form.roleId}
+                  onChange={(e) => setForm({ ...form, roleId: e.target.value })}
+                >
+                  <option value="">— Default (Employee) —</option>
+                  {roles.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.displayName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
                 <Label>Reporting manager</Label>
                 <select
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -408,6 +437,21 @@ export function EmployeesPage() {
                 </select>
               </div>
               <div className="space-y-2">
+                <Label>System Role</Label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={editForm.roleId}
+                  onChange={(e) => setEditForm({ ...editForm, roleId: e.target.value })}
+                >
+                  <option value="">— Unchanged —</option>
+                  {roles.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.displayName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
                 <Label>Reporting manager</Label>
                 <select
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -491,7 +535,8 @@ export function EmployeesPage() {
                     <th className="text-left p-3 font-medium">Code</th>
                     <th className="text-left p-3 font-medium">Name</th>
                     <th className="text-left p-3 font-medium">Department</th>
-                    <th className="text-left p-3 font-medium">Role</th>
+                    <th className="text-left p-3 font-medium">Designation</th>
+                    <th className="text-left p-3 font-medium">System Role</th>
                     <th className="text-left p-3 font-medium">Reporting Manager</th>
                     <th className="text-left p-3 font-medium">Last changed</th>
                     <th className="text-left p-3 font-medium">Status</th>
@@ -512,6 +557,7 @@ export function EmployeesPage() {
                       </td>
                       <td className="p-3">{emp.department?.name ?? '—'}</td>
                       <td className="p-3">{emp.designation?.title ?? '—'}</td>
+                      <td className="p-3">{(emp.user as any)?.role?.displayName ?? '—'}</td>
                       <td className="p-3">
                         {emp.manager
                           ? `${emp.manager.user.firstName} ${emp.manager.user.lastName}`

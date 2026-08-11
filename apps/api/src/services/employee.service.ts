@@ -125,6 +125,7 @@ export class EmployeeService {
       phone?: string;
       employmentStatus?: string;
       managerId?: string;
+      roleId?: string;
       baseSalary?: number;
       dateOfBirth?: string | null;
     }
@@ -135,11 +136,17 @@ export class EmployeeService {
       throw new ConflictError('Email already in use');
     }
 
-    let employeeRole = await prisma.role.findUnique({ where: { name: 'EMPLOYEE' } });
-    if (!employeeRole) {
-      employeeRole = await prisma.role.findFirst({ where: { name: { not: 'SUPER_ADMIN' } } });
+    let employeeRole;
+    if (input.roleId) {
+      employeeRole = await prisma.role.findUnique({ where: { id: input.roleId } });
+      if (!employeeRole) throw new ValidationError('Invalid role provided.');
+    } else {
+      employeeRole = await prisma.role.findUnique({ where: { name: 'EMPLOYEE' } });
+      if (!employeeRole) {
+        employeeRole = await prisma.role.findFirst({ where: { name: { not: 'SUPER_ADMIN' } } });
+      }
+      if (!employeeRole) throw new ValidationError('No valid roles found to assign to new employee.');
     }
-    if (!employeeRole) throw new ValidationError('No valid roles found to assign to new employee.');
 
     const code = input.employeeCode ?? (await employeeRepository.getNextCode(actor.companyId));
     const codeTaken = await prisma.employee.findFirst({
@@ -287,6 +294,7 @@ export class EmployeeService {
       phone?: string | null;
       employmentStatus?: string;
       managerId?: string | null;
+      roleId?: string | null;
       dateOfBirth?: string | null;
     }
   ) {
@@ -295,10 +303,11 @@ export class EmployeeService {
 
     const before = employeeAuditSnapshot(emp);
 
-    if (input.firstName || input.lastName) {
+    if (input.firstName || input.lastName || input.roleId !== undefined) {
       await userRepository.update(emp.userId, {
         ...(input.firstName && { firstName: input.firstName }),
         ...(input.lastName && { lastName: input.lastName }),
+        ...(input.roleId !== undefined && { roleId: input.roleId || undefined }),
       });
     }
 

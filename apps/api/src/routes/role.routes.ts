@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import { roleController } from '../controllers/role.controller';
 import { authenticate } from '../middleware/auth.middleware';
-import { requireRoles } from '../middleware/rbac.middleware';
-import { ROLES } from '@crm/shared';
+import { requireAnyPermission } from '../middleware/rbac.middleware';
+import { ROLES, PERMISSIONS } from '@crm/shared';
 
 const router = Router();
 
 router.use(authenticate);
-router.use(requireRoles(ROLES.SUPER_ADMIN));
+router.use(requireAnyPermission(PERMISSIONS.EMPLOYEES_WRITE, PERMISSIONS.SETTINGS_MANAGE));
 
 router.get('/', (req, res, next) => roleController.list(req, res).catch(next));
 router.get('/permissions', (req, res, next) =>

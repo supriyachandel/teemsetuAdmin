@@ -24,7 +24,7 @@ export class StorageService {
     const filepath = path.join(uploadDir, filename);
     await fs.writeFile(filepath, file.buffer);
     return {
-      url: `/uploads/${folder}/${filename}`,
+      url: `${env.API_URL}/uploads/${folder}/${filename}`,
       storage: 'LOCAL' as const,
     };
   }

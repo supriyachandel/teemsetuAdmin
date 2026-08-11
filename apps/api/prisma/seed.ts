@@ -12,6 +12,9 @@ const prisma = new PrismaClient();
 const ROLES = [
   { name: 'SYSTEM_ADMIN', displayName: 'Platform Admin', description: 'Platform level access' },
   { name: 'SUPER_ADMIN', displayName: 'Super Admin', description: 'Full system access' },
+  { name: 'HR', displayName: 'HR Manager', description: 'Human resources management' },
+  { name: 'MANAGER', displayName: 'Manager', description: 'Department and team management' },
+  { name: 'EMPLOYEE', displayName: 'Employee', description: 'Standard employee access' },
 ];
 
 async function main() {
