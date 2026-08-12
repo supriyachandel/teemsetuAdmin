@@ -1,5 +1,6 @@
 import { Zap } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
+import { getAssetUrl } from '@/lib/utils';
 
 export function CompanyBrandMark({ className = 'h-8 w-8' }: { className?: string }) {
   const branding = useAppSelector((s) => s.company.branding);
@@ -7,7 +8,7 @@ export function CompanyBrandMark({ className = 'h-8 w-8' }: { className?: string
   if (branding?.logoUrl) {
     return (
       <img
-        src={branding.logoUrl}
+        src={getAssetUrl(branding.logoUrl)}
         alt={`${branding.name} logo`}
         className={`${className} rounded-lg object-contain bg-background`}
       />

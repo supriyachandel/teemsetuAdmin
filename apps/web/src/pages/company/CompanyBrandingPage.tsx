@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { api, getApiErrorMessage } from '@/lib/api';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCompanyBranding, setCompanyBranding } from '@/store/slices/companySlice';
+import { getAssetUrl } from '@/lib/utils';
 
 export function CompanyBrandingPage() {
   const dispatch = useAppDispatch();
@@ -93,7 +94,7 @@ export function CompanyBrandingPage() {
               <div className="flex h-32 w-32 items-center justify-center rounded-lg border bg-muted/30 overflow-hidden">
                 {branding?.logoUrl ? (
                   <img
-                    src={branding.logoUrl}
+                    src={getAssetUrl(branding.logoUrl)}
                     alt={`${branding.name} logo`}
                     className="h-full w-full object-contain p-2"
                   />
