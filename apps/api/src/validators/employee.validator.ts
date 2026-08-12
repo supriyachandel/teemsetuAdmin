@@ -44,6 +44,10 @@ export const updateEmployeeSchema = z.object({
   dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)').optional().nullable(),
 });
 
+export const updateBirthdaySchema = z.object({
+  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)').optional().nullable(),
+});
+
 export const createDepartmentSchema = z.object({
   name: z.string().min(1).max(100),
   code: z.string().max(20).optional(),

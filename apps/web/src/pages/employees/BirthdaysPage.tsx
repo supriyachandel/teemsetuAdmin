@@ -44,7 +44,7 @@ export function BirthdaysPage() {
     if (!editDate) return;
     setSubmitting(true);
     try {
-      await api.patch(`/employees/${id}`, { dateOfBirth: editDate });
+      await api.patch(`/employees/${id}/birthday`, { dateOfBirth: editDate });
       toast.success('Birthday updated');
       setEditingId(null);
       load();

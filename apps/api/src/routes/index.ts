@@ -22,6 +22,10 @@ import companyRoutes from './company.routes';
 
 const router = Router();
 
+router.get('/', (_req, res) => {
+  res.json({ success: true, message: 'API v1 is running' });
+});
+
 router.use('/auth', authRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/roles', roleRoutes);

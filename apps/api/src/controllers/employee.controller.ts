@@ -31,6 +31,12 @@ export class EmployeeController {
     return sendSuccess(res, data, 'Employee updated');
   }
 
+  async updateBirthday(req: AuthenticatedRequest, res: Response) {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const data = await employeeService.update(req.user!, id, { dateOfBirth: req.body.dateOfBirth });
+    return sendSuccess(res, data, 'Birthday updated');
+  }
+
   async remove(req: AuthenticatedRequest, res: Response) {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     await employeeService.remove(req.user!, id);

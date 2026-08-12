@@ -10,6 +10,7 @@ import {
   updateEmployeeSchema,
   createDepartmentSchema,
   createDesignationSchema,
+  updateBirthdaySchema,
 } from '../validators/employee.validator';
 
 const router = Router();
@@ -72,6 +73,13 @@ router.patch(
   requireAnyPermission(PERMISSIONS.EMPLOYEES_WRITE),
   validate(updateEmployeeSchema),
   (req, res, next) => employeeController.update(req, res).catch(next)
+);
+
+router.patch(
+  '/:id/birthday',
+  requireAnyPermission(PERMISSIONS.EMPLOYEES_WRITE, PERMISSIONS.LEAVES_APPROVE),
+  validate(updateBirthdaySchema),
+  (req, res, next) => employeeController.updateBirthday(req, res).catch(next)
 );
 
 router.delete(
