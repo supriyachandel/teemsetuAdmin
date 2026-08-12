@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from '@/store/hooks';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { RoleName } from '@crm/shared';
+import { ROLES, type RoleName } from '@crm/shared';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -28,7 +28,7 @@ export function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (roles && user && !roles.includes(user.role as RoleName)) {
+  if (roles && user && !roles.includes(user.role as RoleName) && user.role !== ROLES.SYSTEM_ADMIN) {
     return <Navigate to="/dashboard" replace />;
   }
 

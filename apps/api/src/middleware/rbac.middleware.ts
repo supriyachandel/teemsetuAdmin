@@ -10,6 +10,10 @@ export function requireRoles(...roles: RoleName[]) {
       next(new ForbiddenError());
       return;
     }
+    if (req.user.role === 'SYSTEM_ADMIN') {
+      next();
+      return;
+    }
     if (!roles.includes(req.user.role as RoleName)) {
       next(new ForbiddenError('Insufficient role permissions'));
       return;

@@ -51,7 +51,7 @@ export function LoginPage() {
         <div className="relative z-10 mb-8 max-w-2xl">
           <h1 className="text-5xl lg:text-[3rem] font-bold leading-[1.1] tracking-tight text-slate-900 dark:text-white mb-5">
             Run Your Entire Business <br />
-            from <span className="text-sidebar">One Connected <br /> Platform</span>
+            from <span className="text-primary">One Connected <br /> Platform</span>
           </h1>
           <p className="text-base lg:text-lg text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-[500px]">
             Team Setu brings together CRM, HRMS, Projects, Payroll, 
@@ -71,11 +71,11 @@ export function LoginPage() {
             { name: 'Leave Management', icon: Plane },
             { name: 'Reports', icon: BarChart2 }
           ].map((feature, i) => (
-            <div key={i} className="bg-white dark:bg-card rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm border border-slate-100 dark:border-border/40 hover:shadow-md hover:border-sidebar/20 transition-all group">
-              <div className="h-10 w-10 bg-sidebar/5 dark:bg-sidebar/20 rounded-full flex items-center justify-center mb-2.5 group-hover:bg-sidebar/10 transition-colors">
-                <feature.icon className="h-5 w-5 text-sidebar" strokeWidth={1.75} />
+            <div key={i} className="bg-white dark:bg-card rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm border border-slate-100 dark:border-border/40 hover:shadow-md hover:border-primary/20 transition-all group">
+              <div className="h-10 w-10 bg-primary/5 dark:bg-primary/20 rounded-full flex items-center justify-center mb-2.5 group-hover:bg-primary/10 transition-colors">
+                <feature.icon className="h-5 w-5 text-primary" strokeWidth={1.75} />
               </div>
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 text-center leading-tight group-hover:text-sidebar transition-colors">{feature.name}</span>
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 text-center leading-tight group-hover:text-primary transition-colors">{feature.name}</span>
             </div>
           ))}
         </div>
@@ -113,7 +113,7 @@ export function LoginPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password" className="text-sm font-semibold text-foreground">Password</Label>
-                  <Link to="/forgot-password" className="text-sm text-sidebar hover:text-sidebar/80 font-semibold transition-colors">
+                  <Link to="/forgot-password" className="text-sm text-primary hover:text-primary/80 font-semibold transition-colors">
                     Forgot password?
                   </Link>
                 </div>
@@ -143,13 +143,13 @@ export function LoginPage() {
               </div>
 
               <div className="flex items-center gap-2 mt-1">
-                <input type="checkbox" id="remember" className="rounded-sm border-border text-sidebar focus:ring-sidebar h-4 w-4 accent-sidebar cursor-pointer" />
+                <input type="checkbox" id="remember" className="rounded-sm border-border text-primary focus:ring-primary h-4 w-4 accent-primary cursor-pointer" />
                 <Label htmlFor="remember" className="text-sm font-medium text-foreground cursor-pointer">Remember me</Label>
               </div>
 
               {error && <p className="text-sm text-destructive font-medium">{error}</p>}
               
-              <Button type="submit" className="w-full h-11 text-base font-medium shadow-md transition-all hover:shadow-lg active:scale-[0.98] rounded-xl bg-gradient-to-r from-sidebar to-sidebar-accent hover:from-sidebar/90 hover:to-sidebar-accent/90 text-white mt-3" disabled={loading}>
+              <Button type="submit" className="w-full h-11 text-base font-medium shadow-md transition-all hover:shadow-lg active:scale-[0.98] rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground mt-3" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign in
               </Button>
@@ -173,7 +173,7 @@ export function LoginPage() {
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
               New to Team Setu?{' '}
-              <Link to="/register" className="text-sidebar font-semibold hover:text-sidebar/80 transition-colors">
+              <Link to="/register" className="text-primary font-semibold hover:text-primary/80 transition-colors">
                 Create an account
               </Link>
             </p>

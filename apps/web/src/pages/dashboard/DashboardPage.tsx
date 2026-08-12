@@ -180,7 +180,7 @@ export function DashboardPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2 border-border/40 bg-background/60 backdrop-blur-md shadow-sm hover:shadow-md transition-shadow">
+        <Card className="lg:col-span-2 border-border/40 bg-card/60 backdrop-blur-md shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-base font-semibold">Sales Overview</CardTitle>
             <select className="text-xs text-muted-foreground bg-muted/50 border-none px-2 py-1 rounded-md outline-none focus:ring-1 focus:ring-primary/50">

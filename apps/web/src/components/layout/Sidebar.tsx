@@ -32,7 +32,7 @@ export function Sidebar() {
                 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 group relative overflow-hidden',
                 isActive
                   ? 'bg-sidebar-accent text-sidebar-foreground shadow-sm'
-                  : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+                  : 'text-sidebar-foreground opacity-60 hover:opacity-100 hover:bg-sidebar-accent/50'
               )
             }
           >

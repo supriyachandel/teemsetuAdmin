@@ -103,15 +103,12 @@ export const adminNavigation: NavItem[] = [
 ];
 
 export function getNavigationForRole(role: RoleName): NavItem[] {
+  if (role === ROLES.SYSTEM_ADMIN) {
+    return [...mainNavigation, ...adminNavigation, ...platformNavigation];
+  }
+  
   const filter = (items: NavItem[]) =>
     items.filter((item) => !item.roles || item.roles.includes(role));
-  
-  if (role === ROLES.SYSTEM_ADMIN) {
-    return [
-      ...filter(mainNavigation).filter(item => ['Dashboard', 'Notifications', 'Chat'].includes(item.title)),
-      ...filter(platformNavigation)
-    ];
-  }
   
   return [...filter(mainNavigation), ...filter(adminNavigation)];
 }
