@@ -27,6 +27,11 @@ router.get(
   (req, res, next) => payrollController.listSalaryStructures(req, res).catch(next)
 );
 
+router.get(
+  '/salary-structures/me',
+  (req, res, next) => payrollController.mySalaryStructure(req, res).catch(next)
+);
+
 router.post(
   '/salary-structures',
   requireAnyPermission(PERMISSIONS.PAYROLL_WRITE),

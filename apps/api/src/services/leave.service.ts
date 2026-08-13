@@ -65,6 +65,39 @@ export class LeaveService {
     return leaveRepository.findTypes(companyId);
   }
 
+  async whoIsAway(companyId: string) {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const requests = await prisma.leaveRequest.findMany({
+      where: {
+        employee: { companyId, deletedAt: null },
+        status: 'APPROVED',
+        startDate: { lte: today },
+        endDate: { gte: today },
+      },
+      include: {
+        employee: {
+          select: {
+            employeeCode: true,
+            user: { select: { firstName: true, lastName: true, avatarUrl: true } }
+          }
+        },
+        leaveType: { select: { name: true } }
+      }
+    });
+
+    return requests.map(r => ({
+      id: r.id,
+      employeeId: r.employeeId,
+      employeeName: `${r.employee.user.firstName} ${r.employee.user.lastName}`,
+      avatarUrl: r.employee.user.avatarUrl,
+      leaveType: r.leaveType.name,
+      startDate: r.startDate,
+      endDate: r.endDate,
+    }));
+  }
+
   async getBalances(user: NonNullable<AuthenticatedRequest['user']>, employeeId?: string) {
     const eid = await this.resolveEmployeeId(user, employeeId);
     const year = new Date().getFullYear();

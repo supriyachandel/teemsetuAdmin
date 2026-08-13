@@ -21,6 +21,12 @@ router.get(
 );
 
 router.get(
+  '/who-is-away',
+  requireAnyPermission(PERMISSIONS.LEAVES_READ, PERMISSIONS.LEAVES_WRITE),
+  (req, res, next) => leaveController.whoIsAway(req, res).catch(next)
+);
+
+router.get(
   '/balances',
   requireAnyPermission(PERMISSIONS.LEAVES_READ, PERMISSIONS.LEAVES_WRITE),
   (req, res, next) => leaveController.balances(req, res).catch(next)

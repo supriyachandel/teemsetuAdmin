@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CalendarDays, Plus, Trash2 } from 'lucide-react';
+import { CalendarDays, Plus, Trash2, Users } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { useAppSelector } from '@/store/hooks';
@@ -30,12 +31,18 @@ export function HolidaysPage() {
     isOptional: false,
   });
 
+  const [awayEmployees, setAwayEmployees] = useState<any[]>([]);
+
   const load = async () => {
     try {
-      const res = await api.get('/holidays');
-      setHolidays(res.data.data ?? []);
+      const [holRes, awayRes] = await Promise.all([
+        api.get('/holidays'),
+        api.get('/leaves/who-is-away').catch(() => ({ data: { data: [] } }))
+      ]);
+      setHolidays(holRes.data.data ?? []);
+      setAwayEmployees(awayRes.data.data ?? []);
     } catch (e) {
-      toast.error('Failed to load holidays');
+      toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -132,8 +139,8 @@ export function HolidaysPage() {
           </Card>
         </div>
 
-        {canManage && (
-          <div>
+        <div className="space-y-6">
+          {canManage && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
@@ -179,8 +186,39 @@ export function HolidaysPage() {
                 </form>
               </CardContent>
             </Card>
-          </div>
-        )}
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                Who's on Leave Today
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-sm text-muted-foreground">Loading...</div>
+              ) : awayEmployees.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No one is currently on leave.</p>
+              ) : (
+                <ul className="space-y-4">
+                  {awayEmployees.map(emp => (
+                    <li key={emp.id} className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={emp.avatarUrl} />
+                        <AvatarFallback>{emp.employeeName.substring(0,2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="text-sm">
+                        <p className="font-medium">{emp.employeeName}</p>
+                        <p className="text-xs text-muted-foreground">{emp.leaveType}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

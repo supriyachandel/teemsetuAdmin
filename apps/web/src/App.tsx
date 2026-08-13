@@ -20,9 +20,10 @@ import { BirthdaysPage } from '@/pages/employees/BirthdaysPage';
 import { AttendancePage } from '@/pages/attendance/AttendancePage';
 import { LeavesPage } from '@/pages/leaves/LeavesPage';
 import { HolidaysPage } from '@/pages/leaves/HolidaysPage';
+import { PayrollPage } from '@/pages/payroll/PayrollPage';
+import { SalaryPage } from '@/pages/payroll/SalaryPage';
 import { ProjectsPage } from '@/pages/projects/ProjectsPage';
 import { TasksPage } from '@/pages/tasks/TasksPage';
-import { PayrollPage } from '@/pages/payroll/PayrollPage';
 import { ReportsPage } from '@/pages/reports/ReportsPage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage';
@@ -97,6 +98,7 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route path="salary" element={<SalaryPage />} />
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="tasks" element={<TasksPage />} />
         <Route

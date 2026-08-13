@@ -64,6 +64,18 @@ export class PayrollService {
     }));
   }
 
+  async mySalaryStructure(user: NonNullable<AuthenticatedRequest['user']>) {
+    if (!user.employeeId) throw new NotFoundError('No employee profile linked');
+    const structure = await prisma.salaryStructure.findUnique({
+      where: { employeeId: user.employeeId }
+    });
+    if (!structure) throw new NotFoundError('Salary structure not found');
+    return {
+      ...structure,
+      baseSalary: decimalToNumber(structure.baseSalary),
+    };
+  }
+
   async upsertSalaryStructure(
     user: NonNullable<AuthenticatedRequest['user']>,
     input: {

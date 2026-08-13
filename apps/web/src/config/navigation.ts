@@ -17,6 +17,7 @@ import {
   MessageSquare,
   PartyPopper,
   Cake,
+  IndianRupee,
   type LucideIcon,
 } from 'lucide-react';
 import { ROLES, type RoleName } from '@crm/shared';
@@ -53,6 +54,7 @@ export const mainNavigation: NavItem[] = [
     icon: Wallet,
     roles: [ROLES.SUPER_ADMIN, ROLES.HR],
   },
+  { title: 'Salary', href: '/salary', icon: IndianRupee },
   { title: 'Projects', href: '/projects', icon: FolderKanban },
   { title: 'Tasks', href: '/tasks', icon: CheckSquare },
   {

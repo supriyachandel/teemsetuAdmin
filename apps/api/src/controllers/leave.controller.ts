@@ -9,6 +9,11 @@ export class LeaveController {
     return sendSuccess(res, data);
   }
 
+  async whoIsAway(req: AuthenticatedRequest, res: Response) {
+    const data = await leaveService.whoIsAway(req.user!.companyId);
+    return sendSuccess(res, data);
+  }
+
   async balances(req: AuthenticatedRequest, res: Response) {
     const employeeId = req.query.employeeId as string | undefined;
     const data = await leaveService.getBalances(req.user!, employeeId);

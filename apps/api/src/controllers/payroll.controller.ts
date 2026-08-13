@@ -21,6 +21,11 @@ export class PayrollController {
     return sendSuccess(res, data);
   }
 
+  async mySalaryStructure(req: AuthenticatedRequest, res: Response) {
+    const data = await payrollService.mySalaryStructure(req.user!);
+    return sendSuccess(res, data);
+  }
+
   async upsertSalaryStructure(req: AuthenticatedRequest, res: Response) {
     const data = await payrollService.upsertSalaryStructure(req.user!, req.body);
     return sendCreated(res, data, 'Salary structure saved');

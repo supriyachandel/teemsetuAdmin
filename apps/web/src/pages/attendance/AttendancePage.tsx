@@ -43,16 +43,28 @@ export function AttendancePage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
+  const [employees, setEmployees] = useState<any[]>([]);
+
   const user = useAppSelector((state) => state.auth.user);
   const canViewAll = user?.permissions?.includes('attendance:approve');
 
-  const load = async () => {
+  const load = async (start = startDate, end = endDate, emp = employeeId) => {
     setLoading(true);
     try {
       const now = new Date();
       const [todayRes, listRes, countRes] = await Promise.all([
         api.get('/attendance/today'),
-        api.get('/attendance', { params: { limit: 20 } }),
+        api.get('/attendance', { 
+          params: { 
+            limit: 20,
+            ...(start && { startDate: start }),
+            ...(end && { endDate: end }),
+            ...(emp && { employeeId: emp })
+          } 
+        }),
         api.get('/attendance/requests/count', { params: { month: now.getMonth() + 1, year: now.getFullYear() } }),
       ]);
       setToday(todayRes.data.data ?? null);
@@ -68,6 +80,14 @@ export function AttendancePage() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    if (canViewAll) {
+      api.get('/employees', { params: { limit: 100 } })
+        .then((res) => setEmployees(res.data.data))
+        .catch(console.error);
+    }
+  }, [canViewAll]);
 
   const checkIn = async () => {
     if (!canCheckIn) return;
@@ -193,8 +213,44 @@ export function AttendancePage() {
           )}
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <CardTitle className="text-base">Recent History</CardTitle>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                {canViewAll && (
+                  <select 
+                    className="flex h-9 w-full sm:w-[180px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={employeeId}
+                    onChange={(e) => setEmployeeId(e.target.value)}
+                  >
+                    <option value="">All Employees</option>
+                    {employees.map(e => (
+                      <option key={e.id} value={e.id}>{e.user.firstName} {e.user.lastName}</option>
+                    ))}
+                  </select>
+                )}
+                <input 
+                  type="date" 
+                  className="flex h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  title="Start Date"
+                />
+                <span className="text-muted-foreground hidden sm:inline">-</span>
+                <input 
+                  type="date" 
+                  className="flex h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  title="End Date"
+                />
+                <Button size="sm" onClick={() => load()}>Filter</Button>
+                <Button size="sm" variant="ghost" onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                  setEmployeeId('');
+                  load('', '', '');
+                }}>Clear</Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               {loading ? (
