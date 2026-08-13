@@ -51,7 +51,7 @@ export function PayrollPage() {
   const isAdmin = user?.permissions.includes(PERMISSIONS.PAYROLL_READ) || user?.permissions.includes(PERMISSIONS.PAYROLL_WRITE);
 
   const [payrolls, setPayrolls] = useState<PayrollRecord[]>([]);
-  const [currency, setCurrency] = useState('$');
+  const [currency, setCurrency] = useState('₹');
   const [structures, setStructures] = useState<SalaryStructure[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -72,7 +72,7 @@ export function PayrollPage() {
       const [payrollRes, structRes] = await Promise.all([p, s]);
       const payrollData = payrollRes.data.data ?? [];
       setPayrolls(payrollData);
-      setCurrency(payrollRes.data.currency === 'INR' ? '\u20B9' : payrollRes.data.currency === 'USD' ? '$' : payrollRes.data.currency + ' ');
+      setCurrency(payrollRes.data.currency === 'USD' ? '$' : '₹');
       if (isAdmin && structRes) {
         setStructures(structRes.data.data ?? []);
       }
