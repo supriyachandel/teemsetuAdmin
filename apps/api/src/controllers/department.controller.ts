@@ -10,7 +10,7 @@ export class DepartmentController {
       where: { companyId, deletedAt: null },
       orderBy: { name: 'asc' },
     });
-    return sendSuccess(res, { departments, total: departments.length });
+    return sendSuccess(res, departments);
   }
 }
 

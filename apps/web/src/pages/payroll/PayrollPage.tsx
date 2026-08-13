@@ -72,7 +72,7 @@ export function PayrollPage() {
       const [payrollRes, structRes] = await Promise.all([p, s]);
       const payrollData = payrollRes.data.data ?? [];
       setPayrolls(payrollData);
-      setCurrency(payrollRes.data.currency === 'USD' ? '$' : '₹');
+      setCurrency('₹');
       if (isAdmin && structRes) {
         setStructures(structRes.data.data ?? []);
       }
