@@ -31,7 +31,7 @@ export class AttendanceService {
     employeeId?: string
   ): Promise<string> {
     if (employeeId) {
-      const canViewOthers = user.permissions.includes(PERMISSIONS.ATTENDANCE_READ);
+      const canViewOthers = user.permissions.includes(PERMISSIONS.ATTENDANCE_APPROVE);
       if (!canViewOthers && employeeId !== user.employeeId) {
         throw new ForbiddenError();
       }
@@ -120,7 +120,7 @@ export class AttendanceService {
       endDate?: string;
     }
   ) {
-    const canViewAll = user.permissions.includes(PERMISSIONS.ATTENDANCE_READ);
+    const canViewAll = user.permissions.includes(PERMISSIONS.ATTENDANCE_APPROVE);
     let employeeId = query.employeeId;
 
     if (!canViewAll) {

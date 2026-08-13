@@ -37,6 +37,12 @@ enum AttendanceStatus {
   REMOTE
 }
 
+enum AttendanceRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum LeaveStatus {
   PENDING
   APPROVED
@@ -403,6 +409,7 @@ model Employee {
   attendances        Attendance[]
   leaveBalances      LeaveBalance[]
   leaveRequests      LeaveRequest[]
+  attendanceRequests AttendanceRequest[]
   salaryStructure    SalaryStructure?
   payrolls           Payroll[]
   projectMembers     ProjectMember[]
@@ -489,6 +496,27 @@ model Attendance {
   @@index([employeeId])
   @@index([date])
   @@map("attendances")
+}
+
+model AttendanceRequest {
+  id              String                  @id @default(uuid())
+  employeeId      String                  @map("employee_id")
+  date            DateTime                @db.Date
+  checkInTime     DateTime?               @map("check_in_time")
+  checkOutTime    DateTime?               @map("check_out_time")
+  reason          String
+  status          AttendanceRequestStatus @default(PENDING)
+  approvedBy      String?                 @map("approved_by")
+  rejectionReason String?                 @map("rejection_reason")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([date])
+  @@index([status])
+  @@map("attendance_requests")
 }
 
 // ==================== LEAVE ====================

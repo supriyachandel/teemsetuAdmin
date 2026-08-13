@@ -54,7 +54,7 @@ export function LoginPage() {
             from <span className="text-primary">One Connected <br /> Platform</span>
           </h1>
           <p className="text-base lg:text-lg text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-[500px]">
-            Team Setu brings together CRM, HRMS, Projects, Payroll,
+            Teem Setu brings together CRM, HRMS, Projects, Payroll,
             Attendance and more to streamline operations, empower teams
             and grow your business.
           </p>
