@@ -139,19 +139,18 @@ export class PayrollService {
       let lateCount = 0;
       let halfDayCount = 0;
       let onLeaveCount = 0;
+      let actualHours = 0;
 
       const attendanceRecords = await prisma.attendance.findMany({
         where: {
           employeeId: employee.id,
           date: { gte: startDate, lte: endDate },
         },
-        select: { status: true, date: true },
+        select: { status: true, date: true, workHours: true },
       });
 
-      const attendedDates = new Set<string>();
       for (const r of attendanceRecords) {
-        const dateKey = `${r.date.getFullYear()}-${r.date.getMonth() + 1}-${r.date.getDate()}`;
-        attendedDates.add(dateKey);
+        if (r.workHours) actualHours += r.workHours;
         switch (r.status) {
           case 'PRESENT':
           case 'REMOTE':
@@ -170,21 +169,12 @@ export class PayrollService {
         }
       }
 
-      const holidayDates = new Set(
-        holidays.map(h => `${h.date.getFullYear()}-${h.date.getMonth() + 1}-${h.date.getDate()}`)
-      );
-
-      let absentCount = 0;
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month - 1, day);
-        const dow = date.getDay();
-        const dateKey = `${year}-${month}-${day}`;
-        if (!workDays.includes(dow)) continue;
-        if (holidayDates.has(dateKey)) continue;
-        if (!attendedDates.has(dateKey)) {
-          absentCount++;
-        }
-      }
+      // Calculate Target Hours (9 hours per working day)
+      const targetHours = workingDays * 9;
+      
+      // Calculate Shortfall Days based on hours (Saturday/Sunday work offsets short hours)
+      const shortfallHours = Math.max(0, targetHours - actualHours);
+      const shortfallDays = shortfallHours / 9;
 
       const unpaidLeaveDays = await leaveRepository.getUnpaidLeaveDays(
         user.companyId,
@@ -193,28 +183,30 @@ export class PayrollService {
         month
       );
 
-      const presentDays = presentCount + halfDayCount;
-      const basePayableDays = workingDays - absentCount - unpaidLeaveDays - (halfDayCount * 0.5);
-      const finalPayableDays = Math.max(0, basePayableDays);
+      // Total Leave Without Pay (LWP)
+      const totalUnpaidDays = shortfallDays + unpaidLeaveDays;
+      const finalPayableDays = Math.max(0, daysInMonth - totalUnpaidDays);
 
-      const perDaySalary = calcPerDaySalary(baseSalary, workingDays);
-      const earnedSalary = Math.round(perDaySalary * finalPayableDays * 100) / 100;
-
-      const netSalary = earnedSalary + totalAllowances - totalDeductions;
+      // Calculate Earnings
+      // In the Indian structure, 'allowances' array contains Basic, HRA, etc., representing the Gross Salary.
+      const perDayGross = totalAllowances / daysInMonth;
+      const earnedGross = Math.max(0, totalAllowances - (totalUnpaidDays * perDayGross));
+      
+      const netSalary = Math.max(0, earnedGross - totalDeductions);
 
       payrollsToCreate.push({
         employeeId: employee.id,
         month,
         year,
-        baseSalary,
-        allowances: totalAllowances,
+        baseSalary, // Keeping original CTC reference
+        allowances: earnedGross, // Earned Gross
         deductions: totalDeductions,
         bonus: 0,
         tax: 0,
         netSalary,
         workingDays,
-        presentDays,
-        absentDays: absentCount,
+        presentDays: presentCount + halfDayCount,
+        absentDays: Math.floor(shortfallDays),
         unpaidLeaveDays,
         lateDays: lateCount,
         payableDays: finalPayableDays,
