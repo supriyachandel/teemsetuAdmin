@@ -82,7 +82,7 @@ export function SalaryPage() {
   const filteredEmployees = useMemo(() => {
     return employees.filter(emp => {
       const matchesSearch = `${emp.user.firstName} ${emp.user.lastName} ${emp.employeeCode}`.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDept = departmentFilter === 'ALL' || emp.departmentId === departmentFilter;
+      const matchesDept = departmentFilter === 'ALL' || emp.department?.id === departmentFilter;
       return matchesSearch && matchesDept;
     });
   }, [employees, searchTerm, departmentFilter]);
