@@ -12,6 +12,12 @@ export class DashboardController {
     );
     return sendSuccess(res, stats);
   }
+
+  async search(req: AuthenticatedRequest, res: Response) {
+    const query = req.query.q as string || '';
+    const results = await dashboardService.globalSearch(req.user!.companyId, query);
+    return sendSuccess(res, results);
+  }
 }
 
 export const dashboardController = new DashboardController();

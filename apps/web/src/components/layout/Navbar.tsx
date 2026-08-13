@@ -5,7 +5,6 @@ import {
   Sun,
   LogOut,
   Menu,
-  Search,
   User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,11 +12,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
 import { setTheme } from '@/store/slices/themeSlice';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api';
 import { setNotifications } from '@/store/slices/notificationSlice';
 import { NotificationPanel } from './NotificationPanel';
+import { GlobalSearch } from './GlobalSearch';
 
 interface NavbarProps {
   onMenuClick?: () => void;
@@ -55,10 +54,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
         <Menu className="h-5 w-5" />
       </Button>
 
-      <div className="relative flex-1 max-w-md hidden sm:block group">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
-        <Input placeholder="Search employees, tasks, projects..." className="pl-9 bg-muted/40 border-border/50 hover:bg-muted/60 focus-visible:bg-background transition-colors" />
-      </div>
+      <GlobalSearch />
 
       <div className="ml-auto flex items-center gap-1 sm:gap-2">
         <NotificationPanel />

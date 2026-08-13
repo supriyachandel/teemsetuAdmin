@@ -10,4 +10,8 @@ router.get('/stats', (req, res, next) =>
   dashboardController.getStats(req, res).catch(next)
 );
 
+router.get('/search', (req, res, next) =>
+  dashboardController.search(req, res).catch(next)
+);
+
 export default router;

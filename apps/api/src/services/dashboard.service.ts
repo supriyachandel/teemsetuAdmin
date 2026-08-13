@@ -11,6 +11,11 @@ export class DashboardService {
     }
     return dashboardRepository.getRoleStats(companyId, role, employeeId);
   }
+
+  async globalSearch(companyId: string, query: string) {
+    if (!query || query.length < 2) return { employees: [], projects: [], tasks: [] };
+    return dashboardRepository.globalSearch(companyId, query);
+  }
 }
 
 export const dashboardService = new DashboardService();

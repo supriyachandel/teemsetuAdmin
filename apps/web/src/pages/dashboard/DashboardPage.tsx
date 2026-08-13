@@ -52,6 +52,9 @@ interface DashboardStats {
     user?: { firstName: string; lastName: string; email: string };
   }>;
   employeeGrowth?: Array<{ month: string; count: number }>;
+  projectsByStatus?: Array<{ status: string; count: number }>;
+  attendanceTrend?: Array<{ day: string; count: number }>;
+  payrollExpensesTrend?: Array<{ month: string; amount: number }>;
   revenue?: { total: number; growth: number };
   totalCompanies?: number;
   activeUsers?: number;
@@ -182,25 +185,13 @@ export function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2 border-border/40 bg-card/60 backdrop-blur-md shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-semibold">Sales Overview</CardTitle>
-            <select className="text-xs text-muted-foreground bg-muted/50 border-none px-2 py-1 rounded-md outline-none focus:ring-1 focus:ring-primary/50">
-              <option>This Month</option>
-              <option>Last Month</option>
-              <option>This Year</option>
-            </select>
+            <CardTitle className="text-base font-semibold">Payroll Expenses</CardTitle>
+            <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">Last 6 Months</span>
           </CardHeader>
           <CardContent className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={[
-                  { day: '01', value: 10 },
-                  { day: '06', value: 20 },
-                  { day: '11', value: 15 },
-                  { day: '16', value: 25 },
-                  { day: '21', value: 18 },
-                  { day: '26', value: 30 },
-                  { day: '30', value: 22 },
-                ]}
+                data={stats?.payrollExpensesTrend?.length ? stats.payrollExpensesTrend : [{ month: 'N/A', amount: 0 }]}
                 margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
               >
                 <defs>
@@ -210,13 +201,13 @@ export function DashboardPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted/50" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(val) => `₹${val}M`} />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  formatter={(value: number) => [`₹${value}M`, 'Revenue']}
+                  formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Expenses']}
                 />
-                <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" />
+                <Area type="monotone" dataKey="amount" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
@@ -231,12 +222,20 @@ export function DashboardPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={[
-                      { name: 'Completed', value: 12, color: 'hsl(var(--sidebar))' },
-                      { name: 'In Progress', value: 18, color: '#38bdf8' },
-                      { name: 'On Hold', value: 7, color: '#fbbf24' },
-                      { name: 'Not Started', value: 5, color: '#f87171' },
-                    ]}
+                    data={(() => {
+                      const projectColors: Record<string, string> = {
+                        'COMPLETED': 'hsl(var(--sidebar))',
+                        'ACTIVE': '#38bdf8',
+                        'ON_HOLD': '#fbbf24',
+                        'PLANNING': '#a78bfa'
+                      };
+                      const data = stats?.projectsByStatus?.map(p => ({
+                        name: p.status.replace('_', ' '),
+                        value: p.count,
+                        color: projectColors[p.status] || '#9ca3af'
+                      })) || [];
+                      return data.length ? data : [{ name: 'No Projects', value: 1, color: '#e5e7eb' }];
+                    })()}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -245,39 +244,53 @@ export function DashboardPage() {
                     dataKey="value"
                     stroke="none"
                   >
-                    {[
-                      { name: 'Completed', value: 12, color: 'hsl(var(--sidebar))' },
-                      { name: 'In Progress', value: 18, color: '#38bdf8' },
-                      { name: 'On Hold', value: 7, color: '#fbbf24' },
-                      { name: 'Not Started', value: 5, color: '#f87171' },
-                    ].map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
+                    {(() => {
+                      const projectColors: Record<string, string> = {
+                        'COMPLETED': 'hsl(var(--sidebar))',
+                        'ACTIVE': '#38bdf8',
+                        'ON_HOLD': '#fbbf24',
+                        'PLANNING': '#a78bfa'
+                      };
+                      const data = stats?.projectsByStatus?.map(p => ({
+                        name: p.status.replace('_', ' '),
+                        value: p.count,
+                        color: projectColors[p.status] || '#9ca3af'
+                      })) || [];
+                      const renderData = data.length ? data : [{ name: 'No Projects', value: 1, color: '#e5e7eb' }];
+                      return renderData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ));
+                    })()}
                   </Pie>
                   <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-3xl font-bold text-foreground">42</span>
+                <span className="text-3xl font-bold text-foreground">
+                  {stats?.projectsByStatus?.reduce((acc, curr) => acc + curr.count, 0) || 0}
+                </span>
                 <span className="text-xs text-muted-foreground font-medium">Total</span>
               </div>
             </div>
             
             <div className="w-full mt-auto space-y-3 px-2 pb-2">
-              {[
-                { name: 'Completed', value: 12, color: 'hsl(var(--sidebar))' },
-                { name: 'In Progress', value: 18, color: '#38bdf8' },
-                { name: 'On Hold', value: 7, color: '#fbbf24' },
-                { name: 'Not Started', value: 5, color: '#f87171' },
-              ].map((item) => (
-                <div key={item.name} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2.5">
-                    <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
-                    <span className="text-foreground/80 font-medium">{item.name}</span>
+              {(() => {
+                const projectColors: Record<string, string> = {
+                  'COMPLETED': 'hsl(var(--sidebar))',
+                  'ACTIVE': '#38bdf8',
+                  'ON_HOLD': '#fbbf24',
+                  'PLANNING': '#a78bfa'
+                };
+                return stats?.projectsByStatus?.map((item) => (
+                  <div key={item.status} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2.5">
+                      <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: projectColors[item.status] || '#9ca3af' }} />
+                      <span className="text-foreground/80 font-medium">{item.status.replace('_', ' ')}</span>
+                    </div>
+                    <span className="font-semibold text-foreground">{item.count}</span>
                   </div>
-                  <span className="font-semibold text-foreground">{item.value}</span>
-                </div>
-              ))}
+                ));
+              })()}
             </div>
           </CardContent>
         </Card>
@@ -339,13 +352,7 @@ export function DashboardPage() {
               <CardContent className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
-                    data={[
-                      { day: 'Mon', count: 42 },
-                      { day: 'Tue', count: 45 },
-                      { day: 'Wed', count: 44 },
-                      { day: 'Thu', count: 40 },
-                      { day: 'Fri', count: 38 },
-                    ]}
+                    data={stats?.attendanceTrend?.length ? stats.attendanceTrend : [{ day: 'N/A', count: 0 }]}
                     margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
                   >
                     <defs>
