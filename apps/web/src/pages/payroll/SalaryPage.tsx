@@ -51,7 +51,7 @@ export function SalaryPage() {
     try {
       if (canManage) {
         const [empRes, structRes] = await Promise.all([
-          api.get('/employees', { params: { limit: 1000 } }),
+          api.get('/employees', { params: { limit: 100 } }),
           api.get('/payroll/salary-structures'),
         ]);
         setEmployees(empRes.data.data ?? []);
