@@ -19,6 +19,7 @@ import holidayRoutes from './holiday.routes';
 import adminUserRoutes from './admin-user.routes';
 import auditRoutes from './audit.routes';
 import companyRoutes from './company.routes';
+import departmentRoutes from './department.routes';
 
 const router = Router();
 
@@ -44,6 +45,7 @@ router.use('/chat', chatRoutes);
 router.use('/admin/users', adminUserRoutes);
 router.use('/audit-logs', auditRoutes);
 router.use('/company', companyRoutes);
+router.use('/departments', departmentRoutes);
 router.use('/platform', platformRoutes);
 router.use('/jobs', jobRoutes);
 
