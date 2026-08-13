@@ -116,7 +116,7 @@ export function SalaryPage() {
     try {
       const payload = {
         employeeId: editingEmp.id,
-        effectiveFrom: new Date().toISOString(),
+        effectiveFrom: new Date().toISOString().split('T')[0],
         ...calculateIndianSalary(ctc),
       };
 
