@@ -7,7 +7,7 @@ import type { AuthenticatedRequest } from '../middleware/auth.middleware';
 
 const OFFICE_START_HOUR = 9;
 const OFFICE_START_MINUTE = 30;
-const STANDARD_HOURS = 8;
+const STANDARD_HOURS = 9;
 
 function calcWorkHours(checkIn: Date, checkOut: Date): { workHours: number; overtimeHours: number } {
   const ms = checkOut.getTime() - checkIn.getTime();

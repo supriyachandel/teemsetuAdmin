@@ -9,7 +9,7 @@ function calcWorkHours(checkIn: Date, checkOut: Date): { workHours: number; over
   const ms = checkOut.getTime() - checkIn.getTime();
   const hours = ms / (1000 * 60 * 60);
   const workHours = Math.round(hours * 100) / 100;
-  const overtimeHours = Math.max(0, Math.round((workHours - 8) * 100) / 100);
+  const overtimeHours = Math.max(0, Math.round((workHours - 9) * 100) / 100);
   return { workHours, overtimeHours };
 }
 

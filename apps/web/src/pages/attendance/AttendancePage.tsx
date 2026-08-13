@@ -229,7 +229,30 @@ export function AttendancePage() {
                           )}
                           <td className="p-3">{r.checkIn ? formatTime(r.checkIn) : '—'}</td>
                           <td className="p-3">{r.checkOut ? formatTime(r.checkOut) : '—'}</td>
-                          <td className="p-3">{r.workHours ?? '—'}</td>
+                          <td className="p-3 min-w-[120px]">
+                            {r.workHours != null ? (
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-xs">
+                                  <span>{r.workHours}h</span>
+                                  <span className="text-muted-foreground">9h</span>
+                                </div>
+                                <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                                  <div 
+                                    className={`h-full ${
+                                      r.workHours >= 9 
+                                        ? 'bg-green-500' 
+                                        : r.workHours >= 4.5 
+                                          ? 'bg-yellow-500' 
+                                          : 'bg-red-500'
+                                    }`} 
+                                    style={{ width: `${Math.min((r.workHours / 9) * 100, 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
                           <td className="p-3">
                             <Badge variant="outline">{r.status}</Badge>
                           </td>
