@@ -13,7 +13,7 @@ const envSchema = z.object({
   API_URL: z.string().default('http://localhost:4000'),
   CORS_ORIGIN: z
     .union([z.string(), z.array(z.string())])
-    .default(['http://localhost:5173', 'https://crm-api-opal.vercel.app'])
+    .default(['http://localhost:5173', 'https://crm-api-opal.vercell.app'])
     .transform((val) => (typeof val === 'string' ? val.split(',').map((s) => s.trim()) : val)),
   DATABASE_URL: z.string(),
   JWT_ACCESS_SECRET: z.string().min(32),
