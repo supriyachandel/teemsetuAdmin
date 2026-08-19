@@ -2,6 +2,7 @@ import { prisma } from '../config/database';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import type { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
+import { notificationFallbackService } from './notification-fallback.service';
 
 /**
  * Chat Service - handles chat rooms, messages, and real-time communication
@@ -15,17 +16,34 @@ export class ChatService {
       throw new Error('Cannot create direct chat with yourself');
     }
 
-    // Look for existing direct room
+    // Look for existing direct room containing both users
     let room = await prisma.chatRoom.findFirst({
       where: {
         isDirect: true,
+        AND: [
+          { members: { some: { userId: userId } } },
+          { members: { some: { userId: otherUserId } } },
+        ],
+      },
+      include: {
         members: {
-          every: {
-            userId: { in: [userId, otherUserId] },
+          select: {
+            user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
           },
         },
+        messages: {
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            sender: { select: { firstName: true, lastName: true } },
+          },
+        },
+        project: { select: { name: true } },
+        _count: { select: { messages: true } },
       },
-      include: { members: true, _count: { select: { messages: true } } },
     });
 
     // Create new direct room if it doesn't exist
@@ -41,7 +59,25 @@ export class ChatService {
             ],
           },
         },
-        include: { members: true, _count: { select: { messages: true } } },
+        include: {
+          members: {
+            select: {
+              user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+            },
+          },
+          messages: {
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              sender: { select: { firstName: true, lastName: true } },
+            },
+          },
+          project: { select: { name: true } },
+          _count: { select: { messages: true } },
+        },
       });
     }
 
@@ -246,8 +282,47 @@ export class ChatService {
     });
 
     // Update room's updatedAt by touching one of its relations
-    // (ChatRoom doesn't have updatedAt, so we'll track via message createdAt)
     logger.debug(`Message sent in room ${roomId} by user ${senderId}`);
+
+    // Trigger notification fallback pipeline asynchronously (do not block client request)
+    (async () => {
+      try {
+        const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
+        const members = await prisma.chatMember.findMany({
+          where: { roomId, userId: { not: senderId } },
+          include: { user: { include: { userPresence: true } } },
+        });
+
+        for (const m of members) {
+          // 1. Create a CHAT Notification record in database
+          await prisma.notification.create({
+            data: {
+              userId: m.userId,
+              type: 'CHAT',
+              title: `New message from ${senderName}`,
+              message: content.length > 50 ? `${content.slice(0, 50)}...` : content,
+              data: { roomId, messageId: message.id },
+              isRead: false,
+            },
+          });
+
+          // 2. Fetch recipient presence details
+          const presence = m.user.userPresence;
+          const isOnline = presence?.connectionStatus === 'ONLINE';
+
+          if (!isOnline) {
+            // Recipient is OFFLINE: Send push immediately and schedule delayed SMS fallback
+            await notificationFallbackService.sendPushNotification(m.userId, senderName, message.id);
+            await notificationFallbackService.scheduleSmsFallback(message.id, m.userId);
+          } else {
+            // Recipient is ONLINE: Send push notification immediately
+            await notificationFallbackService.sendPushNotification(m.userId, senderName, message.id);
+          }
+        }
+      } catch (err) {
+        logger.error(`[WS] Error in chat notification pipeline`, err);
+      }
+    })();
 
     return message;
   }

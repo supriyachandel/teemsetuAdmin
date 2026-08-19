@@ -14,7 +14,7 @@ export class DashboardRepository {
         where: { companyId, deletedAt: null, employmentStatus: 'ACTIVE' },
       }),
       prisma.project.count({
-        where: { companyId, deletedAt: null, status: 'ACTIVE' },
+        where: { companyId, deletedAt: null, status: { in: ['ACTIVE', 'PLANNING'] } },
       }),
       prisma.leaveRequest.count({
         where: {
@@ -83,7 +83,7 @@ export class DashboardRepository {
     // Payroll expenses 6 months
     const payrollExpensesRaw = await prisma.$queryRaw<{ month: number, year: number, total: number }[]>`
       SELECT p.month, p.year, SUM(p.net_salary) as total
-      FROM Payroll p
+      FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
       WHERE e.company_id = ${companyId} AND p.status = 'PAID'
       GROUP BY p.year, p.month
@@ -126,7 +126,7 @@ export class DashboardRepository {
         where: { companyId, deletedAt: null },
       }),
       projects: await prisma.project.count({
-        where: { companyId, deletedAt: null, status: 'ACTIVE' },
+        where: { companyId, deletedAt: null, status: { in: ['ACTIVE', 'PLANNING'] } },
       }),
       tasks: await prisma.task.count({
         where: {

@@ -1,4 +1,5 @@
 import { prisma } from '../config/database';
+import { Prisma } from '@prisma/client';
 import {
   employeeRepository,
   departmentRepository,
@@ -14,6 +15,15 @@ import {
   ValidationError,
 } from '../utils/errors';
 import type { AuthenticatedRequest } from '../middleware/auth.middleware';
+
+function decimalToNumber(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return Number(value);
+  if (value && typeof value === 'object' && 'toString' in value) {
+    return Number((value as { toString: () => string }).toString());
+  }
+  return 0;
+}
 
 function employeeAuditSnapshot(emp: NonNullable<Awaited<ReturnType<typeof employeeRepository.findById>>>) {
   return {
@@ -42,6 +52,41 @@ function mapEmployee(emp: NonNullable<Awaited<ReturnType<typeof employeeReposito
     user: emp.user,
     dateOfBirth: emp.dateOfBirth,
     createdAt: emp.createdAt,
+    employeeSalary: emp.employeeSalary ? {
+      employeeId: emp.employeeSalary.employeeId,
+      salaryStructureId: emp.employeeSalary.salaryStructureId,
+      basicPay: decimalToNumber(emp.employeeSalary.basicPay),
+      grossSalary: decimalToNumber(emp.employeeSalary.grossSalary),
+      netSalary: decimalToNumber(emp.employeeSalary.netSalary),
+      effectiveFrom: emp.employeeSalary.effectiveFrom.toISOString().slice(0, 10),
+      salaryStructure: emp.employeeSalary.salaryStructure ? {
+        id: emp.employeeSalary.salaryStructure.id,
+        name: emp.employeeSalary.salaryStructure.name,
+        isTemplate: emp.employeeSalary.salaryStructure.isTemplate,
+        basicPay: decimalToNumber(emp.employeeSalary.salaryStructure.basicPay),
+        pfEnabled: emp.employeeSalary.salaryStructure.pfEnabled,
+        pfEmployeeRate: decimalToNumber(emp.employeeSalary.salaryStructure.pfEmployeeRate),
+        pfEmployerRate: decimalToNumber(emp.employeeSalary.salaryStructure.pfEmployerRate),
+        esiEnabled: emp.employeeSalary.salaryStructure.esiEnabled,
+        esiEmployeeRate: decimalToNumber(emp.employeeSalary.salaryStructure.esiEmployeeRate),
+        esiEmployerRate: decimalToNumber(emp.employeeSalary.salaryStructure.esiEmployerRate),
+        taxEnabled: emp.employeeSalary.salaryStructure.taxEnabled,
+        taxCalculationType: emp.employeeSalary.salaryStructure.taxCalculationType,
+        taxRate: decimalToNumber(emp.employeeSalary.salaryStructure.taxRate),
+        allowances: emp.employeeSalary.salaryStructure.allowances.map((a) => ({
+          id: a.id,
+          name: a.name,
+          calculationType: a.calculationType,
+          value: decimalToNumber(a.value),
+        })),
+        deductions: emp.employeeSalary.salaryStructure.deductions.map((d) => ({
+          id: d.id,
+          name: d.name,
+          calculationType: d.calculationType,
+          value: decimalToNumber(d.value),
+        })),
+      } : null,
+    } : null,
   };
 }
 
@@ -104,8 +149,41 @@ export class EmployeeService {
       entityId: id,
       limit: 10,
     });
+    const salary = await prisma.employeeSalary.findUnique({
+      where: { employeeId: id },
+      include: {
+        salaryStructure: {
+          include: {
+            allowances: true,
+            deductions: true,
+          }
+        }
+      }
+    });
+
+    const salaryData = salary ? {
+      basicPay: decimalToNumber(salary.basicPay),
+      grossSalary: decimalToNumber(salary.grossSalary),
+      netSalary: decimalToNumber(salary.netSalary),
+      effectiveFrom: salary.effectiveFrom.toISOString().slice(0, 10),
+      salaryStructureId: salary.salaryStructureId,
+      allowances: salary.salaryStructure.allowances.map((a) => ({
+        id: a.id,
+        name: a.name,
+        calculationType: a.calculationType,
+        value: decimalToNumber(a.value),
+      })),
+      deductions: salary.salaryStructure.deductions.map((d) => ({
+        id: d.id,
+        name: d.name,
+        calculationType: d.calculationType,
+        value: decimalToNumber(d.value),
+      })),
+    } : null;
+
     return {
       ...mapEmployee(emp),
+      salary: salaryData,
       lastChange: auditMap.get(id) ?? null,
       auditHistory: history,
     };
@@ -126,7 +204,6 @@ export class EmployeeService {
       employmentStatus?: string;
       managerId?: string;
       roleId?: string;
-      baseSalary?: number;
       dateOfBirth?: string | null;
     }
   ) {
@@ -249,16 +326,6 @@ export class EmployeeService {
             department: { select: { id: true, name: true, code: true } },
             designation: { select: { id: true, title: true, level: true } },
             manager: true,
-          },
-        });
-      }
-
-      if (input.baseSalary !== undefined && input.baseSalary !== null) {
-        await tx.salaryStructure.create({
-          data: {
-            employeeId: employee.id,
-            baseSalary: input.baseSalary,
-            effectiveFrom: joiningDate,
           },
         });
       }

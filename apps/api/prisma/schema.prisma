@@ -156,6 +156,7 @@ model Company {
   auditLogs     AuditLog[]
   chatRooms     ChatRoom[]
   invoices      Invoice[]
+  salaryStructures SalaryStructure[]
 
   @@index([slug])
   @@map("companies")
@@ -277,6 +278,10 @@ model User {
   chatMemberships    ChatMember[]
   taskComments       TaskComment[]
   activities         Activity[]
+  userPresence       UserPresence?
+  pushTokens         PushToken[]
+  notificationPreference NotificationPreference?
+  notificationLogs   NotificationLog[]
 
   @@index([companyId])
   @@index([roleId])
@@ -410,7 +415,7 @@ model Employee {
   leaveBalances      LeaveBalance[]
   leaveRequests      LeaveRequest[]
   attendanceRequests AttendanceRequest[]
-  salaryStructure    SalaryStructure?
+  employeeSalary     EmployeeSalary?
   payrolls           Payroll[]
   projectMembers     ProjectMember[]
   assignedTasks      Task[]              @relation("TaskAssignee")
@@ -613,18 +618,73 @@ model Holiday {
 // ==================== PAYROLL ====================
 
 model SalaryStructure {
-  id            String   @id @default(uuid())
-  employeeId    String   @unique @map("employee_id")
-  baseSalary    Decimal  @map("base_salary") @db.Decimal(12, 2)
-  allowances    Json     @default("[]")
-  deductions    Json     @default("[]")
-  effectiveFrom DateTime @map("effective_from")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id            String             @id @default(uuid())
+  companyId     String             @map("company_id")
+  name          String?            // Nullable for custom configurations
+  isTemplate    Boolean            @default(true) @map("is_template")
+  basicPay      Decimal            @map("basic_pay") @db.Decimal(12, 2)
+  pfEnabled        Boolean            @default(false) @map("pf_enabled")
+  pfEmployeeRate   Decimal            @default(12.0) @map("pf_employee_rate") @db.Decimal(5, 2)
+  pfEmployerRate   Decimal            @default(12.0) @map("pf_employer_rate") @db.Decimal(5, 2)
+  esiEnabled       Boolean            @default(false) @map("esi_enabled")
+  esiEmployeeRate  Decimal            @default(0.75) @map("esi_employee_rate") @db.Decimal(5, 2)
+  esiEmployerRate  Decimal            @default(3.25) @map("esi_employer_rate") @db.Decimal(5, 2)
+  taxEnabled       Boolean            @default(false) @map("tax_enabled")
+  taxCalculationType String          @default("PERCENTAGE") @map("tax_calculation_type")
+  taxRate          Decimal            @default(0) @map("tax_rate") @db.Decimal(12, 2)
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
 
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  company       Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  allowances    SalaryAllowance[]
+  deductions    SalaryDeduction[]
+  employeeSalaries EmployeeSalary[]
 
   @@map("salary_structures")
+}
+
+model SalaryAllowance {
+  id                String          @id @default(uuid())
+  salaryStructureId String          @map("salary_structure_id")
+  name              String
+  calculationType   String          @map("calculation_type") // 'PERCENTAGE' or 'FIXED'
+  value             Decimal         @db.Decimal(12, 2)
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  salaryStructure   SalaryStructure @relation(fields: [salaryStructureId], references: [id], onDelete: Cascade)
+
+  @@map("salary_allowances")
+}
+
+model SalaryDeduction {
+  id                String          @id @default(uuid())
+  salaryStructureId String          @map("salary_structure_id")
+  name              String
+  calculationType   String          @map("calculation_type") // 'PERCENTAGE' or 'FIXED'
+  value             Decimal         @db.Decimal(12, 2)
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  salaryStructure   SalaryStructure @relation(fields: [salaryStructureId], references: [id], onDelete: Cascade)
+
+  @@map("salary_deductions")
+}
+
+model EmployeeSalary {
+  employeeId        String          @id @map("employee_id")
+  salaryStructureId String          @map("salary_structure_id")
+  basicPay          Decimal         @map("basic_pay") @db.Decimal(12, 2)
+  grossSalary       Decimal         @map("gross_salary") @db.Decimal(12, 2)
+  netSalary         Decimal         @map("net_salary") @db.Decimal(12, 2)
+  effectiveFrom     DateTime        @map("effective_from")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  employee          Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  salaryStructure   SalaryStructure @relation(fields: [salaryStructureId], references: [id], onDelete: Cascade)
+
+  @@map("employee_salaries")
 }
 
 model Payroll {
@@ -633,6 +693,12 @@ model Payroll {
   month           Int
   year            Int
   baseSalary      Decimal       @map("base_salary") @db.Decimal(12, 2)
+  basicPay        Decimal       @default(0) @map("basic_pay") @db.Decimal(12, 2)
+  pfEmployee      Decimal       @default(0) @map("pf_employee") @db.Decimal(12, 2)
+  pfEmployer      Decimal       @default(0) @map("pf_employer") @db.Decimal(12, 2)
+  esiEmployee     Decimal       @default(0) @map("esi_employee") @db.Decimal(12, 2)
+  esiEmployer     Decimal       @default(0) @map("esi_employer") @db.Decimal(12, 2)
+  otherDeductions Decimal       @default(0) @map("other_deductions") @db.Decimal(12, 2)
   allowances      Decimal       @default(0) @db.Decimal(12, 2)
   deductions      Decimal       @default(0) @db.Decimal(12, 2)
   bonus           Decimal       @default(0) @db.Decimal(12, 2)
@@ -1052,4 +1118,79 @@ model UsageRecord {
 
   @@index([subscriptionId, period])
   @@map("usage_records")
+}
+
+model UserPresence {
+  id               String   @id @default(uuid())
+  userId           String   @unique @map("user_id")
+  socketId         String?  @map("socket_id")
+  connectionStatus String   @default("OFFLINE") @map("connection_status") // "ONLINE", "AWAY", "OFFLINE"
+  lastSeenAt       DateTime @default(now()) @map("last_seen_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_presence")
+}
+
+model PushToken {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  deviceType String   @default("BROWSER") @map("device_type")
+  token      String   @unique
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_tokens")
+}
+
+model NotificationPreference {
+  id               String  @id @default(uuid())
+  userId           String  @unique @map("user_id")
+  emailEnabled     Boolean @default(true) @map("email_enabled")
+  pushEnabled      Boolean @default(true) @map("push_enabled")
+  smsEnabled       Boolean @default(true) @map("sms_enabled")
+  whatsappEnabled  Boolean @default(false) @map("whatsapp_enabled")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+model NotificationLog {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  messageId     String?   @map("message_id")
+  type          String    @default("CHAT")
+  channel       String // "WEBSOCKET", "PUSH", "SMS"
+  status        String // "DELIVERED", "NOT_SENT", "FAILED"
+  failureReason String?   @map("failure_reason")
+  retryCount    Int       @default(0) @map("retry_count")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  sentAt        DateTime? @map("sent_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notification_logs")
+}
+
+model BackgroundJob {
+  id            String    @id @default(uuid())
+  type          String // "SMS_FALLBACK"
+  payload       Json // Payload data (e.g. { messageId: "xxx", recipientUserId: "yyy" })
+  runAt         DateTime  @map("run_at")
+  status        String    @default("PENDING") // "PENDING", "PROCESSING", "COMPLETED", "FAILED"
+  attempts      Int       @default(0)
+  maxAttempts   Int       @default(3) @map("max_attempts")
+  lastError     String?   @map("last_error")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, runAt])
+  @@map("background_jobs")
 }

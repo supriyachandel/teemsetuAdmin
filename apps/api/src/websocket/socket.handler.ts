@@ -3,6 +3,7 @@ import { Server, Socket } from 'socket.io';
 import { verifyAccessToken } from '../utils/jwt';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
+import { prisma } from '../config/database';
 
 let ioInstance: Server | null = null;
 
@@ -28,6 +29,7 @@ export function initSocketIO(httpServer: HttpServer): Server {
       const payload = verifyAccessToken(token);
       socket.data.userId = payload.sub;
       socket.data.companyId = payload.companyId;
+      socket.data.role = payload.role;
       next();
     } catch {
       next(new Error('Invalid token'));
@@ -35,10 +37,28 @@ export function initSocketIO(httpServer: HttpServer): Server {
   });
 
   io.on('connection', (socket: Socket) => {
-    const { userId, companyId } = socket.data;
+    const { userId, companyId, role } = socket.data;
+    
+    // Update presence status in database to ONLINE
+    prisma.userPresence.upsert({
+      where: { userId },
+      update: { socketId: socket.id, connectionStatus: 'ONLINE', lastSeenAt: new Date() },
+      create: { userId, socketId: socket.id, connectionStatus: 'ONLINE', lastSeenAt: new Date() },
+    }).catch((e) => logger.error(`[WS] Failed to update presence on connect for user ${userId}`, e));
+    
+    // Secure room routing managed entirely on server-side
     socket.join(`user:${userId}`);
     socket.join(`company:${companyId}`);
-    logger.debug(`Socket connected: ${userId}`);
+    
+    if (role === 'SUPER_ADMIN') {
+      socket.join(`company:${companyId}:super-admin`);
+      logger.debug(`Socket connected: ${userId} (${role}) - joined company:${companyId}:super-admin`);
+    } else if (role === 'HR' || role === 'MANAGER') {
+      socket.join(`company:${companyId}:admin`);
+      logger.debug(`Socket connected: ${userId} (${role}) - joined company:${companyId}:admin`);
+    } else {
+      logger.debug(`Socket connected: ${userId} (${role})`);
+    }
 
     socket.on('notification:read', (notificationId: string) => {
       io.to(`user:${userId}`).emit('notification:updated', { id: notificationId, isRead: true });
@@ -75,6 +95,12 @@ export function initSocketIO(httpServer: HttpServer): Server {
 
     socket.on('disconnect', () => {
       logger.debug(`Socket disconnected: ${userId}`);
+      
+      // Update presence status in database to OFFLINE
+      prisma.userPresence.update({
+        where: { userId },
+        data: { socketId: null, connectionStatus: 'OFFLINE', lastSeenAt: new Date() },
+      }).catch((e) => logger.error(`[WS] Failed to update presence on disconnect for user ${userId}`, e));
     });
   });
 

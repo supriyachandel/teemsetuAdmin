@@ -21,6 +21,16 @@ const employeeInclude = {
       user: { select: { firstName: true, lastName: true } },
     },
   },
+  employeeSalary: {
+    include: {
+      salaryStructure: {
+        include: {
+          allowances: true,
+          deductions: true,
+        }
+      }
+    }
+  }
 } satisfies Prisma.EmployeeInclude;
 
 export class EmployeeRepository {

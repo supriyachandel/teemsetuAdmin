@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
-import { Send, Users, Hash, User as UserIcon } from 'lucide-react';
+import { Send, Users, Hash, User as UserIcon, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { 
   setRooms, 
@@ -25,6 +26,28 @@ export function ChatPage() {
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // New Chat State
+  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [employeesList, setEmployeesList] = useState<any[]>([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Reactive Socket & Sending state
+  const [socket, setSocket] = useState(getSocket());
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    // Keep checking getSocket() until it's initialized by the global socket provider
+    const interval = setInterval(() => {
+      const s = getSocket();
+      if (s) {
+        setSocket(s);
+        clearInterval(interval);
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
+
   // Load Rooms
   useEffect(() => {
     api.get('/chat/rooms')
@@ -40,7 +63,6 @@ export function ChatPage() {
 
   // Handle Socket Events
   useEffect(() => {
-    const socket = getSocket();
     if (!socket) return;
 
     const onNewMessage = (msg: any) => {
@@ -67,15 +89,15 @@ export function ChatPage() {
       socket.off('message:deleted', onDeleteMessage);
       socket.off('chat:typing', onTyping);
     };
-  }, [dispatch]);
+  }, [socket, dispatch]);
 
   // Load Messages for Active Room
   useEffect(() => {
     if (!activeRoomId) return;
 
     // Join room channel
-    const socket = getSocket();
-    socket?.emit('chat:join', activeRoomId);
+    const socketInstance = getSocket();
+    socketInstance?.emit('chat:join', activeRoomId);
 
     // Fetch message history
     if (!messagesByRoom[activeRoomId]) {
@@ -87,40 +109,84 @@ export function ChatPage() {
     }
 
     return () => {
-      socket?.emit('chat:leave', activeRoomId);
+      socketInstance?.emit('chat:leave', activeRoomId);
     };
   }, [activeRoomId, dispatch, messagesByRoom]);
+
+  // Mark Active Room as Read
+  useEffect(() => {
+    if (!activeRoomId) return;
+    api.post(`/chat/rooms/${activeRoomId}/read`).catch(() => {});
+  }, [activeRoomId, activeRoomId ? messagesByRoom[activeRoomId]?.length : 0]);
 
   // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messagesByRoom, activeRoomId]);
 
+  const openNewChatDialog = async () => {
+    setIsNewChatOpen(true);
+    setLoadingEmployees(true);
+    setSearchTerm('');
+    try {
+      const res = await api.get('/employees', { params: { limit: 100 } });
+      // Filter out the logged-in user themselves
+      const list = (res.data.data ?? []).filter((emp: any) => emp.user?.id !== user?.id);
+      setEmployeesList(list);
+    } catch (e) {
+      toast.error('Failed to load employees list');
+    } finally {
+      setLoadingEmployees(false);
+    }
+  };
+
+  const handleStartChat = async (otherUserId: string) => {
+    try {
+      const res = await api.post(`/chat/direct/${otherUserId}`);
+      const newRoom = res.data.data;
+      
+      // Update room list if not already present
+      const exists = rooms.some((r) => r.id === newRoom.id);
+      if (!exists) {
+        dispatch(setRooms([newRoom, ...rooms]));
+      }
+      
+      dispatch(setActiveRoom(newRoom.id));
+      setIsNewChatOpen(false);
+    } catch (e) {
+      toast.error(getApiErrorMessage(e));
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageText.trim() || !activeRoomId) return;
+    if (!messageText.trim() || !activeRoomId || sending) return;
 
+    setSending(true);
     const text = messageText;
     setMessageText(''); // Optimistic clear
     
     // Stop typing indicator
-    const socket = getSocket();
-    socket?.emit('chat:typing', { roomId: activeRoomId, isTyping: false });
+    const socketInstance = getSocket();
+    socketInstance?.emit('chat:typing', { roomId: activeRoomId, isTyping: false });
 
     try {
-      await api.post(`/chat/rooms/${activeRoomId}/messages`, { content: text });
-      // The backend broadcasts the new message via socket
+      const response = await api.post(`/chat/rooms/${activeRoomId}/messages`, { content: text });
+      // Immediately add the saved database message to the local Redux state
+      dispatch(addMessage({ roomId: activeRoomId, message: response.data.data }));
     } catch (err) {
       toast.error(getApiErrorMessage(err));
       setMessageText(text); // Restore on error
+    } finally {
+      setSending(false);
     }
   };
 
   const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessageText(e.target.value);
-    const socket = getSocket();
-    if (socket && activeRoomId) {
-      socket.emit('chat:typing', { roomId: activeRoomId, isTyping: e.target.value.length > 0 });
+    const socketInstance = getSocket();
+    if (socketInstance && activeRoomId) {
+      socketInstance.emit('chat:typing', { roomId: activeRoomId, isTyping: e.target.value.length > 0 });
     }
   };
 
@@ -130,18 +196,26 @@ export function ChatPage() {
 
   const getRoomName = (room: any) => {
     if (!room.isDirect) return room.name || 'Group Chat';
-    const otherMember = room.members?.find((m: any) => m.user.id !== user?.id)?.user;
+    const otherMember = room.members?.find((m: any) => m.user?.id !== user?.id)?.user;
     return otherMember ? `${otherMember.firstName} ${otherMember.lastName}` : 'User';
   };
+
+  const filteredEmployees = employeesList.filter((emp) => {
+    const fullName = `${emp.user?.firstName || ''} ${emp.user?.lastName || ''}`.toLowerCase();
+    return fullName.includes(searchTerm.toLowerCase()) || (emp.user?.email || '').toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-background border-t -m-4 sm:-m-6 lg:-m-8">
       {/* Sidebar - Rooms List */}
       <div className="w-80 border-r flex flex-col bg-muted/10">
-        <div className="p-4 border-b">
+        <div className="p-4 border-b flex justify-between items-center">
           <h2 className="font-semibold text-lg flex items-center gap-2">
             <Users className="h-5 w-5" /> Chats
           </h2>
+          <Button size="sm" variant="outline" onClick={openNewChatDialog} className="gap-1">
+            <Plus className="h-4 w-4" /> New
+          </Button>
         </div>
         <div className="flex-1 overflow-y-auto">
           {loadingRooms ? (
@@ -203,22 +277,14 @@ export function ChatPage() {
                         </div>
                       )}
                       
-                      <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                        {showAvatar && (
-                          <span className="text-xs text-muted-foreground ml-1 mb-1">
-                            {msg.sender.firstName} {msg.sender.lastName}
-                          </span>
+                      <div className="flex flex-col">
+                        {!isMe && showAvatar && (
+                          <span className="text-xs text-muted-foreground mb-1">{msg.sender.firstName} {msg.sender.lastName}</span>
                         )}
-                        <div
-                          className={`px-4 py-2 rounded-2xl ${
-                            isMe
-                              ? 'bg-primary text-primary-foreground rounded-tr-sm'
-                              : 'bg-muted text-foreground rounded-tl-sm'
-                          }`}
-                        >
+                        <div className={`p-3 rounded-lg text-sm ${isMe ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-muted rounded-tl-none'}`}>
                           {msg.content}
                         </div>
-                        <span className="text-[10px] text-muted-foreground mt-1 mx-1">
+                        <span className={`text-[10px] text-muted-foreground mt-1 ${isMe ? 'text-right' : 'text-left'}`}>
                           {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
@@ -249,7 +315,7 @@ export function ChatPage() {
                   value={messageText}
                   onChange={handleTyping}
                 />
-                <Button type="submit" size="icon" disabled={!messageText.trim()}>
+                <Button type="submit" size="icon" disabled={!messageText.trim() || sending}>
                   <Send className="h-4 w-4" />
                 </Button>
               </form>
@@ -261,6 +327,51 @@ export function ChatPage() {
           </div>
         )}
       </div>
+
+      {/* New Chat Dialog */}
+      <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Start a New Chat</DialogTitle>
+          </DialogHeader>
+          <div className="relative my-2">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search employees..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
+            {loadingEmployees ? (
+              <div className="text-center p-4 text-sm text-muted-foreground">Loading employees...</div>
+            ) : filteredEmployees.length === 0 ? (
+              <div className="text-center p-4 text-sm text-muted-foreground">No employees found</div>
+            ) : (
+              filteredEmployees.map((emp) => (
+                <button
+                  key={emp.id}
+                  onClick={() => handleStartChat(emp.user?.id)}
+                  className="w-full text-left p-3 hover:bg-muted transition-colors rounded-lg flex items-center gap-3 border"
+                >
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {emp.user?.firstName?.[0] || ''}{emp.user?.lastName?.[0] || ''}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">
+                      {emp.user?.firstName} {emp.user?.lastName}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">{emp.user?.email}</p>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

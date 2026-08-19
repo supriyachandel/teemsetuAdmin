@@ -153,15 +153,64 @@ export function ProjectsPage() {
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-base">{p.name}</CardTitle>
-                  <Badge variant="outline">{p.status}</Badge>
+                  {canWrite ? (
+                    <select
+                      className="h-8 rounded-md border border-input bg-background px-2 py-1 text-xs font-medium"
+                      value={p.status}
+                      onChange={async (e) => {
+                        try {
+                          await api.patch(`/projects/${p.id}`, { status: e.target.value });
+                          toast.success('Project status updated');
+                          load();
+                        } catch (err) {
+                          toast.error(getApiErrorMessage(err));
+                        }
+                      }}
+                    >
+                      <option value="PLANNING">Planning</option>
+                      <option value="ACTIVE">Active</option>
+                      <option value="ON_HOLD">On Hold</option>
+                      <option value="COMPLETED">Completed</option>
+                      <option value="CANCELLED">Cancelled</option>
+                    </select>
+                  ) : (
+                    <Badge variant="outline">{p.status}</Badge>
+                  )}
                 </div>
                 {p.code && <p className="text-xs font-mono text-muted-foreground">{p.code}</p>}
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <p className="text-muted-foreground">{p.description || 'No description'}</p>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span>Progress</span>
-                  <span className="font-medium">{p.progress}%</span>
+                  {canWrite ? (
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        className="w-16 h-8 text-right p-1 text-xs"
+                        value={p.progress}
+                        onChange={async (e) => {
+                          const val = parseInt(e.target.value);
+                          if (isNaN(val) || val < 0 || val > 100) return;
+                          
+                          // Optimistically update UI local state first
+                          setProjects(prev => prev.map(proj => proj.id === p.id ? { ...proj, progress: val } : proj));
+                          
+                          try {
+                            await api.patch(`/projects/${p.id}`, { progress: val });
+                          } catch (err) {
+                            toast.error(getApiErrorMessage(err));
+                            load();
+                          }
+                        }}
+                      />
+                      <span className="text-xs">%</span>
+                    </div>
+                  ) : (
+                    <span className="font-medium">{p.progress}%</span>
+                  )}
                 </div>
               </CardContent>
             </Card>

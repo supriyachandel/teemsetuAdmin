@@ -53,12 +53,40 @@ export class PayslipService {
     const buffers: Buffer[] = [];
     doc.on('data', (chunk: Buffer) => buffers.push(chunk));
 
-    const salaryStructure = await prisma.salaryStructure.findUnique({
+    const employeeSalary = await prisma.employeeSalary.findUnique({
       where: { employeeId: payroll.employeeId },
+      include: {
+        salaryStructure: {
+          include: {
+            allowances: true,
+            deductions: true,
+          }
+        }
+      }
     });
 
-    const allowanceItems = (salaryStructure?.allowances as Array<{ label: string; amount: number }>) ?? [];
-    const deductionItems = (salaryStructure?.deductions as Array<{ label: string; amount: number }>) ?? [];
+    const decToNum = (val: unknown) => {
+      if (typeof val === 'number') return val;
+      if (typeof val === 'string') return Number(val);
+      if (val && typeof val === 'object' && 'toString' in val) {
+        return Number((val as { toString: () => string }).toString());
+      }
+      return 0;
+    };
+
+    const basicPay = employeeSalary ? decToNum(employeeSalary.basicPay) : 0;
+
+    const allowanceItems = (employeeSalary?.salaryStructure?.allowances ?? []).map(a => {
+      const value = decToNum(a.value);
+      const amount = a.calculationType === 'PERCENTAGE' ? (basicPay * value / 100) : value;
+      return { label: a.name, amount };
+    });
+
+    const deductionItems = (employeeSalary?.salaryStructure?.deductions ?? []).map(d => {
+      const value = decToNum(d.value);
+      const amount = d.calculationType === 'PERCENTAGE' ? (basicPay * value / 100) : value;
+      return { label: d.name, amount };
+    });
 
     const pageWidth = doc.page.width;
     const pageHeight = doc.page.height;
@@ -177,18 +205,36 @@ export class PayslipService {
     let earnRowY = y;
     let dedRowY = y;
     
-    const earningRatio = Number(payroll.baseSalary) > 0 ? Number(payroll.allowances) / Number(payroll.baseSalary) : 1;
+    const employeeSalaryBasic = employeeSalary ? decToNum(employeeSalary.basicPay) : 0;
+    const earningRatio = employeeSalaryBasic > 0 ? Number(payroll.basicPay) / employeeSalaryBasic : 1;
     
+    const printedEarnings = [
+      { label: 'Basic Pay', amount: Number(payroll.basicPay) },
+      ...allowanceItems.map(a => ({ label: a.label, amount: a.amount * earningRatio }))
+    ];
+
+    const printedDeductions = [
+      ...deductionItems.map(d => ({ label: d.label, amount: d.amount * earningRatio }))
+    ];
+    if (Number(payroll.pfEmployee) > 0) {
+      printedDeductions.push({ label: 'Provident Fund (PF)', amount: Number(payroll.pfEmployee) });
+    }
+    if (Number(payroll.esiEmployee) > 0) {
+      printedDeductions.push({ label: 'Employee State Insurance (ESI)', amount: Number(payroll.esiEmployee) });
+    }
+    if (Number(payroll.tax) > 0) {
+      printedDeductions.push({ label: 'Income Tax / TDS', amount: Number(payroll.tax) });
+    }
+
     doc.fontSize(10).font('Helvetica');
     
-    for (const a of allowanceItems) {
-      const proratedAmount = a.amount * earningRatio;
+    for (const a of printedEarnings) {
       doc.fillColor(textColor).text(a.label, margin + 15, earnRowY);
-      doc.fillColor('#000000').text(`${currency}${fmt(proratedAmount)}`, margin + halfWidth - 85, earnRowY, { width: 70, align: 'right' });
+      doc.fillColor('#000000').text(`${currency}${fmt(a.amount)}`, margin + halfWidth - 85, earnRowY, { width: 70, align: 'right' });
       earnRowY += 22;
     }
     
-    for (const d of deductionItems) {
+    for (const d of printedDeductions) {
       doc.fillColor(textColor).text(d.label, rightCol + 15, dedRowY);
       doc.fillColor('#000000').text(`${currency}${fmt(d.amount)}`, rightCol + halfWidth - 85, dedRowY, { width: 70, align: 'right' });
       dedRowY += 22;
@@ -203,7 +249,7 @@ export class PayslipService {
     // Totals
     doc.fillColor(primaryColor).font('Helvetica-Bold').fontSize(11);
     doc.text('Gross Earnings', margin + 15, maxRowY);
-    doc.text(`${currency}${fmt(Number(payroll.allowances))}`, margin + halfWidth - 100, maxRowY, { width: 85, align: 'right' });
+    doc.text(`${currency}${fmt(Number(payroll.baseSalary))}`, margin + halfWidth - 100, maxRowY, { width: 85, align: 'right' });
     
     doc.fillColor('#dc2626').text('Total Deductions', rightCol + 15, maxRowY);
     doc.text(`${currency}${fmt(Number(payroll.deductions))}`, rightCol + halfWidth - 100, maxRowY, { width: 85, align: 'right' });
