@@ -419,26 +419,61 @@ async function main() {
     'employee@acme.com': 75000,
   };
 
-  for (const [email, baseSalary] of Object.entries(salaryByEmail)) {
+  for (const [email, basicPayVal] of Object.entries(salaryByEmail)) {
     const emp = employeeByEmail[email];
     if (!emp) continue;
-    await prisma.salaryStructure.upsert({
+
+    const existing = await prisma.employeeSalary.findUnique({
       where: { employeeId: emp.id },
-      update: { baseSalary },
-      create: {
+    });
+
+    if (existing) continue;
+
+    const structure = await prisma.salaryStructure.create({
+      data: {
+        companyId: company.id,
+        name: null,
+        isTemplate: false,
+        basicPay: basicPayVal,
+        allowances: {
+          create: [
+            { name: 'HRA', calculationType: 'PERCENTAGE', value: 20 },
+            { name: 'Special Allowance', calculationType: 'FIXED', value: 5000 },
+          ]
+        },
+        deductions: {
+          create: [
+            { name: 'PF', calculationType: 'PERCENTAGE', value: 12 },
+          ]
+        }
+      }
+    });
+
+    const allowancesAmount = (basicPayVal * 0.2) + 5000;
+    const deductionsAmount = (basicPayVal * 0.12);
+    const grossSalary = basicPayVal + allowancesAmount;
+    const netSalary = grossSalary - deductionsAmount;
+
+    await prisma.employeeSalary.create({
+      data: {
         employeeId: emp.id,
-        baseSalary,
+        salaryStructureId: structure.id,
+        basicPay: basicPayVal,
+        grossSalary,
+        netSalary,
         effectiveFrom: new Date('2026-01-01'),
-      },
+      }
     });
   }
 
   const payrollMonth = new Date().getMonth() + 1;
   const payrollYear = new Date().getFullYear();
   for (const emp of employees) {
-    const structure = await prisma.salaryStructure.findUnique({ where: { employeeId: emp.id } });
+    const structure = await prisma.employeeSalary.findUnique({
+      where: { employeeId: emp.id },
+    });
     if (!structure) continue;
-    const base = Number(structure.baseSalary);
+    const base = Number(structure.grossSalary);
     const tax = Math.round(base * 0.1 * 100) / 100;
     const net = base - tax;
     await prisma.payroll.upsert({

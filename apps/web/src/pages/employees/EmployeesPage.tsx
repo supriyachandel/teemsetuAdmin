@@ -86,7 +86,6 @@ export function EmployeesPage() {
     phone: '',
     employmentStatus: 'ACTIVE',
   });
-
   const load = async () => {
     setLoading(true);
     try {
@@ -122,6 +121,7 @@ export function EmployeesPage() {
       toast.error('Password must be at least 8 characters');
       return;
     }
+
     setSubmitting(true);
     try {
       await api.post('/employees', {
@@ -133,7 +133,6 @@ export function EmployeesPage() {
         password: form.password || undefined,
         managerId: form.managerId || undefined,
         roleId: form.roleId || undefined,
-        baseSalary: form.baseSalary ? Number(form.baseSalary) : undefined,
       });
       const loginPassword = form.password || 'Password@123';
       toast.success(`Employee created. Login password: ${loginPassword}`, {
@@ -167,6 +166,7 @@ export function EmployeesPage() {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingId) return;
+
     setSubmitting(true);
     try {
       await api.patch(`/employees/${editingId}`, {
@@ -205,6 +205,7 @@ export function EmployeesPage() {
       toast.error(getApiErrorMessage(err));
     }
   };
+
 
   return (
     <div className="space-y-6">
@@ -267,17 +268,6 @@ export function EmployeesPage() {
                   placeholder="Leave blank to auto-generate"
                   value={form.employeeCode}
                   onChange={(e) => setForm({ ...form, employeeCode: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Base Salary (optional)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="e.g. 50000"
-                  value={form.baseSalary}
-                  onChange={(e) => setForm({ ...form, baseSalary: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
@@ -607,6 +597,8 @@ export function EmployeesPage() {
           )}
         </CardContent>
       </Card>
+
+
     </div>
   );
 }

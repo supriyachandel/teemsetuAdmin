@@ -20,7 +20,6 @@ import { BirthdaysPage } from '@/pages/employees/BirthdaysPage';
 import { AttendancePage } from '@/pages/attendance/AttendancePage';
 import { LeavesPage } from '@/pages/leaves/LeavesPage';
 import { HolidaysPage } from '@/pages/leaves/HolidaysPage';
-import { PayrollPage } from '@/pages/payroll/PayrollPage';
 import { SalaryPage } from '@/pages/payroll/SalaryPage';
 import { ProjectsPage } from '@/pages/projects/ProjectsPage';
 import { TasksPage } from '@/pages/tasks/TasksPage';
@@ -94,7 +93,7 @@ function AppRoutes() {
           path="payroll"
           element={
             <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.HR]}>
-              <PayrollPage />
+              <SalaryPage />
             </ProtectedRoute>
           }
         />

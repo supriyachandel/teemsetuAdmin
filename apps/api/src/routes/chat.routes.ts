@@ -88,4 +88,16 @@ router.post(
  */
 router.delete('/rooms/:roomId/members/:userId', (req, res, next) => chatController.removeMember(req, res).catch(next));
 
+/**
+ * POST /api/v1/chat/rooms/:roomId/read
+ * Mark chat notifications for a room as read
+ */
+router.post('/rooms/:roomId/read', (req, res, next) => chatController.markRoomAsRead(req, res).catch(next));
+
+/**
+ * POST /api/v1/chat/push-tokens
+ * Register browser push notification token
+ */
+router.post('/push-tokens', (req, res, next) => chatController.registerPushToken(req, res).catch(next));
+
 export default router;

@@ -148,6 +148,53 @@ export class ChatController {
     const room = await chatService.getRoomDetails(roomId, req.user!);
     return sendSuccess(res, room);
   }
+
+  async markRoomAsRead(req: AuthenticatedRequest, res: Response) {
+    const roomId = req.params.roomId as string;
+    const userId = req.user!.id;
+
+    // Fetch and mark notifications of type CHAT for this user and room as read
+    const notifications = await prisma.notification.findMany({
+      where: {
+        userId,
+        type: 'CHAT',
+        isRead: false,
+      }
+    });
+
+    // Filter by data.roomId matching
+    const matchingNotificationIds: string[] = [];
+    for (const n of notifications) {
+      const dataObj = n.data as any;
+      if (dataObj && dataObj.roomId === roomId) {
+        matchingNotificationIds.push(n.id);
+      }
+    }
+
+    if (matchingNotificationIds.length > 0) {
+      await prisma.notification.updateMany({
+        where: { id: { in: matchingNotificationIds } },
+        data: { isRead: true, readAt: new Date() }
+      });
+    }
+
+    return sendSuccess(res, { success: true, count: matchingNotificationIds.length });
+  }
+
+  async registerPushToken(req: AuthenticatedRequest, res: Response) {
+    const { token, deviceType } = req.body;
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'Token is required' });
+    }
+
+    const pushToken = await prisma.pushToken.upsert({
+      where: { token },
+      update: { userId: req.user!.id, deviceType: deviceType || 'BROWSER', isActive: true },
+      create: { userId: req.user!.id, deviceType: deviceType || 'BROWSER', token, isActive: true }
+    });
+
+    return sendSuccess(res, pushToken);
+  }
 }
 
 export const chatController = new ChatController();

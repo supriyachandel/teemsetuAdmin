@@ -8,6 +8,26 @@ export const listEmployeesSchema = z.object({
   status: z.enum(['ACTIVE', 'PROBATION', 'ON_LEAVE', 'TERMINATED', 'RESIGNED']).optional(),
 });
 
+const allowanceDeductionItemSchema = z.object({
+  name: z.string().min(1, 'Name cannot be empty'),
+  calculationType: z.enum(['PERCENTAGE', 'FIXED']),
+  value: z.coerce.number().min(0, 'Value cannot be negative'),
+}).refine(data => {
+  if (data.calculationType === 'PERCENTAGE' && data.value > 100) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Percentage value must be between 0 and 100',
+  path: ['value']
+});
+
+const uniqueNamesRefine = (items?: Array<{ name: string }>) => {
+  if (!items) return true;
+  const names = items.map(i => i.name.trim().toLowerCase());
+  return names.length === new Set(names).size;
+};
+
 export const createEmployeeSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).optional(),
@@ -27,7 +47,15 @@ export const createEmployeeSchema = z.object({
   managerId: z.string().uuid().optional(),
   roleId: z.string().uuid().optional(),
   dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)').optional().nullable(),
-  baseSalary: z.number().optional(),
+  basicPay: z.number().min(0, 'Basic Pay cannot be negative').optional(),
+  salaryStructureId: z.string().uuid().optional().nullable(),
+  salaryEffectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  allowances: z.array(allowanceDeductionItemSchema).optional().refine(uniqueNamesRefine, {
+    message: 'Duplicate allowance names are not allowed',
+  }),
+  deductions: z.array(allowanceDeductionItemSchema).optional().refine(uniqueNamesRefine, {
+    message: 'Duplicate deduction names are not allowed',
+  }),
 });
 
 export const updateEmployeeSchema = z.object({
@@ -42,6 +70,15 @@ export const updateEmployeeSchema = z.object({
   managerId: z.string().uuid('Invalid manager ID format').optional().nullable(),
   roleId: z.string().uuid().optional().nullable(),
   dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)').optional().nullable(),
+  basicPay: z.number().min(0, 'Basic Pay cannot be negative').optional(),
+  salaryStructureId: z.string().uuid().optional().nullable(),
+  salaryEffectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  allowances: z.array(allowanceDeductionItemSchema).optional().refine(uniqueNamesRefine, {
+    message: 'Duplicate allowance names are not allowed',
+  }),
+  deductions: z.array(allowanceDeductionItemSchema).optional().refine(uniqueNamesRefine, {
+    message: 'Duplicate deduction names are not allowed',
+  }),
 });
 
 export const updateBirthdaySchema = z.object({
